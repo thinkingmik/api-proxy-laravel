@@ -1,2 +1,6 @@
-# api-proxy-laravel
-Laravel 4 helper proxy package for javascript API calls
+PHP Api Proxy for Laravel
+================
+
+## License
+
+This package is released under the MIT License.

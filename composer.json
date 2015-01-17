@@ -1,0 +1,30 @@
+{
+    "name": "andreoli/api-proxy-laravel",
+    "description": "A Laravel helper proxy package for javascript API calls",
+    "keywords": [
+        "laravel",
+        "API",
+        "ajax",
+        "proxy",
+        "javascript"
+    ],
+    "authors": [
+        {
+            "name": "Michele Andreoli",
+            "email": "michi.andreoli@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.4.0"
+    },
+    "autoload": {
+        "classmap": [
+            "src/migrations"
+        ],
+        "psr-0": {
+            "Andreoli\\ApiProxy\\": "src/"
+        }
+    },
+    "minimum-stability": "stable",
+    "license": "MIT"
+}
