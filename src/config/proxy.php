@@ -10,4 +10,15 @@
 
 return [
 
+    /*
+      |--------------------------------------------------------------------------
+      | Define the URI attribute name
+      |--------------------------------------------------------------------------
+      |
+      | When you call the proxy helper, you need to pass the real URI of the API endpoint
+      | in this parameter.
+      |
+     */
+    'uri_param' => 'uri',
+
 ];

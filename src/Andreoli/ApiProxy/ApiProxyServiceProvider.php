@@ -10,6 +10,9 @@
 
 namespace Andreoli\ApiProxy;
 
+use Illuminate\Support\ServiceProvider;
+use Illuminate\Http\JsonResponse;
+use Andreoli\ApiProxy\Exceptions\ProxyException;
 
 class ApiProxyServiceProvider extends ServiceProvider {
 
@@ -56,7 +59,8 @@ class ApiProxyServiceProvider extends ServiceProvider {
      */
     public function registerApiProxy() {
         $this->app->bindShared('api-proxy.proxy', function ($app) {
-            $proxy = new Proxy();
+            $uri_param = $app['config']->get('api-proxy-laravel::proxy.uri_param');
+            $proxy = new Proxy($uri_param);
             return $proxy;
         });
 
@@ -87,7 +91,22 @@ class ApiProxyServiceProvider extends ServiceProvider {
      * @return void
      */
     private function registerErrorHandlers() {
+        $this->app->error(function(ProxyException $ex) {
+            if (\Request::ajax() && \Request::wantsJson()) {
+                return new JsonResponse([
+                    'error' => $ex->errorType,
+                    'error_description' => $ex->getMessage()
+                ], $ex->httpStatusCode, $ex->getHttpHeaders()
+                );
+            }
 
+            return \View::make('api-proxy-laravel::proxy_error', array(
+                'header' => $ex->getHttpHeaders()[0],
+                'code' => $ex->httpStatusCode,
+                'error' => $ex->errorType,
+                'message' => $ex->getMessage()
+            ));
+        });
     }
 
 }
