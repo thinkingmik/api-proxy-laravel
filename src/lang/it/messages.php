@@ -9,5 +9,6 @@
  */
 
 return array(
-	'proxy_missing_param' => ':param',
+	'proxy_missing_param' => 'Manca il parametro obbligatorio <b>:param</b> nella richiesta',
+	'proxy_missing_param' => 'Manca la chiave segreta per il client <b>:client</b>',
 );

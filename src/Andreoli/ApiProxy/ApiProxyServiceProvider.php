@@ -59,8 +59,8 @@ class ApiProxyServiceProvider extends ServiceProvider {
      */
     public function registerApiProxy() {
         $this->app->bindShared('api-proxy.proxy', function ($app) {
-            $uri_param = $app['config']->get('api-proxy-laravel::proxy.uri_param');
-            $proxy = new Proxy($uri_param);
+            $params = $app['config']->get('api-proxy-laravel::proxy');
+            $proxy = new Proxy($params);
             return $proxy;
         });
 
