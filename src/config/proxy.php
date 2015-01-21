@@ -30,9 +30,11 @@ return [
       | secrets for the authentication with the oauth password grant flow.
       |
      */
-    'login_username_param' => 'username',
-    'login_password_param' => 'password',
-    'login_client_param' => 'clientid',
+    'login_client_id_param'     => 'client_id',
+    'login_username_param'      => 'username',
+    'login_password_param'      => 'password',
+
+    'login_client_secret_param' => 'client_secret',
 
     /*
       |--------------------------------------------------------------------------
