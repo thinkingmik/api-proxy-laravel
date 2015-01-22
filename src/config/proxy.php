@@ -12,29 +12,35 @@ return [
 
     /*
       |--------------------------------------------------------------------------
-      | Define the URI attribute name
+      | Define the URI attribute name (and others input parameters)
       |--------------------------------------------------------------------------
       |
       | When you call the proxy helper, you need to pass the real URI of the API endpoint
       | in this parameter. If the URI is encoded the proxy will decode it automatically.
+      | The grant_type and client_id parameters are optional.
       |
      */
     'uri_param' => 'uri',
+    'grant_type_param' => 'grant_type',
+    'client_id_param' => 'client_id',
 
     /*
       |--------------------------------------------------------------------------
-      |  Attributes for login request call
+      |  Attributes for oauth call
       |--------------------------------------------------------------------------
       |
-      | If request call contains these three attributes, proxy helper will add the client
-      | secrets for the authentication with the oauth password grant flow.
+      | The client secret attribute name for oauth call. This parameter will be add
+      | by the proxy helper when grant_type_param value is 'password'.
       |
      */
-    'login_client_id_param'     => 'client_id',
-    'login_username_param'      => 'username',
-    'login_password_param'      => 'password',
+    'client_secret_param' => 'client_secret',
+    'access_token_param' => 'access_token',
 
-    'login_client_secret_param' => 'client_secret',
+
+    'cookie_info' => [
+        'name' => 'proxy',
+        'time' => 5
+    ],
 
     /*
       |--------------------------------------------------------------------------

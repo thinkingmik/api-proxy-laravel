@@ -12,61 +12,102 @@ namespace Andreoli\ApiProxy;
 
 use Andreoli\ApiProxy\Exceptions\MissingClientSecretException;
 use Andreoli\ApiProxy\Exceptions\ProxyMissingParamException;
+use Andreoli\ApiProxy\Models\ProxyResponse;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Facades\Log;
 
 class Proxy {
 
     private $loginCall = false;
     private $uriParam = null;
-    private $loginParams = array();
+    private $grantTypeParam = null;
+    private $clientIdParam = null;
+    private $clientSecretParam = null;
+    private $accessTokenParam = null;
     private $clientSecrets = null;
+    private $cookieInfo = array();
 
     public function __construct($params) {
         $this->uriParam = $params['uri_param'];
-        $this->loginParams = array(
-            'clientId' => $params['login_client_id_param'],
-            'clientSecret' => $params['login_client_secret_param'],
-            'username' => $params['login_username_param'],
-            'password' => $params['login_password_param']
-        );
+        $this->grantTypeParam = $params['grant_type_param'];
+        $this->clientIdParam = $params['client_id_param'];
+        $this->clientSecretParam = $params['client_secret_param'];
+        $this->accessTokenParam = $params['access_token_param'];
         $this->clientSecrets = $params['client_secrets'];
+        $this->cookieInfo = $params['cookie_info'];
     }
 
-
     /**
-     * @param $header
      * @param $method
      * @param array $inputs
-     * @return \GuzzleHttp\Stream\StreamInterface|null
+     * @return Response
      * @throws MissingClientSecretException
      * @throws ProxyMissingParamException
      */
-    public function makeRequest($header, $method, Array $inputs) {
+    public function makeRequest($method, Array $inputs) {
+
+        //Remove the url parameter from input and store it in a variable
         $this->checkInputParams($inputs);
-
         $uriVal = trim(urldecode($inputs[$this->uriParam]));
-
-        //If it is a login call add client secret
-        if ($this->loginCall) {
-            //Add client secret
-            $secret = $this->getClientSecret($inputs[$this->loginParams['clientId']]);
-            $inputs = array_add($inputs, $this->loginParams['clientSecret'], $secret);
-        }
-
-        //Remove the url parameter from input
         $indexSpam = array_search($inputs[$this->uriParam], $inputs);
         unset($inputs[$indexSpam]);
 
-        //Make HTTP request
-        $response = $this->sendRequest($method, $uriVal, $inputs);
+        $parsedCookie = Cookie::get($this->cookieInfo['name']);
+        //Log::info(var_export($parsedCookie, true));
+        if (isset($parsedCookie)) {
+            $parsedCookie = json_decode($parsedCookie, true);
+        }
 
-        //Get response
-        //TODO: create a model for this response
-        return array(
-            'content'   => $this->getResponseContent($response),
-            'status'    => $response->getStatusCode()
-        );
+        //If it is a login call add client secret else add access token read from cookie
+        $inputs = $this->changeInputParameters($inputs, $parsedCookie);
+
+        //Send HTTP request
+        $guzzleResponse = $this->sendRequest($method, $uriVal, $inputs);
+        $proxyResponse = new ProxyResponse($guzzleResponse->getStatusCode(), $guzzleResponse->getReasonPhrase(), $guzzleResponse->getProtocolVersion(), $this->getResponseContent($guzzleResponse));
+        $response = new Response($proxyResponse->getContent(), $proxyResponse->getStatusCode());
+
+        if ($this->loginCall) {
+            if (isset($parsedCookie)) {
+                Cookie::forget($this->cookieInfo['name']);
+            }
+            if (!isset($this->cookieInfo['time']) || $this->cookieInfo['time'] == null) {
+                $cookie = Cookie::forever($this->cookieInfo['name'], json_encode($proxyResponse->getContent()));
+            } else {
+                $cookie = Cookie::make($this->cookieInfo['name'], json_encode($proxyResponse->getContent()), $this->cookieInfo['time']);
+            }
+            $response->withCookie($cookie);
+            //Log::info(var_export($cookie, true));
+        }
+
+        return $response;
+    }
+
+    /**
+     * @param $inputs
+     * @param $cookie
+     * @return array
+     * @throws MissingClientSecretException
+     */
+    private function changeInputParameters($inputs, $cookie) {
+        $newInputs = null;
+        if ($this->loginCall) {
+            $secret = $this->getClientSecret($inputs[$this->clientIdParam]);
+            if (array_key_exists($this->clientSecretParam, $inputs)) {
+                unset($inputs[$this->clientSecretParam]);
+            }
+            $newInputs = array_add($inputs, $this->clientSecretParam, $secret);
+        }
+        else {
+            if (array_key_exists($this->accessTokenParam, $inputs)) {
+                unset($inputs[$this->accessTokenParam]);
+            }
+            $newInputs = array_add($inputs, $this->accessTokenParam, $cookie['access_token']);
+        }
+
+        return $newInputs;
     }
 
     /**
@@ -134,16 +175,9 @@ class Proxy {
         if (!array_key_exists($this->uriParam, $inputs)) {
             throw new ProxyMissingParamException($this->uriParam);
         }
-        //Check if login params exists
-        if (!array_key_exists($this->loginParams['username'], $inputs) && !array_key_exists($this->loginParams['password'], $inputs) && !array_key_exists($this->loginParams['clientId'], $inputs)) {
-            $this->loginCall = false;
-        }
-        else {
-            foreach ($this->loginParams as $key => $value) {
-                if (!array_key_exists($value, $inputs) && $value != $this->loginParams['clientSecret']) {
-                    throw new ProxyMissingParamException($value);
-                }
-            }
+
+        //Check if call is a login request
+        if (array_key_exists($this->grantTypeParam, $inputs) && strtolower($inputs[$this->grantTypeParam]) === 'password') {
             $this->loginCall = true;
         }
     }
