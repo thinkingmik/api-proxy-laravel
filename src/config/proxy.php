@@ -12,34 +12,39 @@ return [
 
     /*
       |--------------------------------------------------------------------------
-      | Define the URI attribute name (and others input parameters)
+      | Proxy input: define the URI attribute name
       |--------------------------------------------------------------------------
       |
       | When you call the proxy helper, you need to pass the real URI of the API endpoint
       | in this parameter. If the URI is encoded the proxy will decode it automatically.
-      | The grant_type and client_id parameters are optional.
       |
      */
     'uri_param' => 'uri',
-    'grant_type_param' => 'grant_type',
-    'client_id_param' => 'client_id',
 
     /*
       |--------------------------------------------------------------------------
-      |  Attributes for oauth call
+      | Proxy input: define if proxy need to save access token into a cookie
       |--------------------------------------------------------------------------
       |
-      | The client secret attribute name for oauth call. This parameter will be add
-      | by the proxy helper when grant_type_param value is 'password'.
+      | When proxy find this attribute in the request and its value is Y or TRUE
+      | the proxy knows that this is an access token request and creates a cookie.
+      | GET http://laravel.dev/access_token?uri=http://api/token&client_id=myclient&username=xxx&password=xxx&token=true
       |
      */
-    'client_secret_param' => 'client_secret',
-    'access_token_param' => 'access_token',
+    'req_access_token' => 'token',
 
-
+    /*
+      |--------------------------------------------------------------------------
+      |  Cookie configuration
+      |--------------------------------------------------------------------------
+      |
+      | This is the cookie's configuration: name of cookie and expiration minutes.
+      | If time is NULL the cookie doesn't expires.
+      |
+     */
     'cookie_info' => [
-        'name' => 'proxy',
-        'time' => 5
+        'name' => 'proxify',
+        'time' => null
     ],
 
     /*

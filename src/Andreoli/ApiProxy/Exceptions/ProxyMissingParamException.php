@@ -19,7 +19,7 @@ class ProxyMissingParamException extends ProxyException {
      * Throw a new ProxyMissingParamException exception
      */
     public function __construct($parameter) {
-	    $this->httpStatusCode = 500;
+	    $this->httpStatusCode = 400;
 	    $this->errorType = 'proxy_missing_param';
         parent::__construct(\Lang::get('api-proxy-laravel::messages.proxy_missing_param', array('param' => $parameter)));
     }
