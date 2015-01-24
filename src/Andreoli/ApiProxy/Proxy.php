@@ -12,7 +12,6 @@ namespace Andreoli\ApiProxy;
 
 use Andreoli\ApiProxy\Exceptions\CookieExpiredException;
 use Andreoli\ApiProxy\Exceptions\MissingClientSecretException;
-use Andreoli\ApiProxy\Exceptions\ProxyException;
 use Andreoli\ApiProxy\Exceptions\ProxyMissingParamException;
 use Andreoli\ApiProxy\Models\ProxyResponse;
 use GuzzleHttp\Client;
@@ -31,8 +30,10 @@ class Proxy {
     const URI = 'uri';
 
     private $loginCall = false;
-    private $reqAccessToken = null;
+    private $noCookie = false;
+    private $requestMode = null;
     private $uriParam = null;
+    private $redirectUri = null;
     private $grantTypeParam = null;
     private $clientIdParam = null;
     private $clientSecretParam = null;
@@ -43,7 +44,8 @@ class Proxy {
 
     public function __construct($params) {
         $this->uriParam = $params['uri_param'];
-        $this->reqAccessToken = $params['req_access_token'];
+        $this->requestMode = $params['request_mode'];
+        $this->redirectUri = $params['redirect_login'];
         $this->grantTypeParam = Proxy::GRANT_TYPE;
         $this->clientIdParam = Proxy::CLIENT_ID;
         $this->clientSecretParam = Proxy::CLIENT_SECRET;
@@ -53,6 +55,12 @@ class Proxy {
         $this->cookieInfo = $params['cookie_info'];
     }
 
+    /**
+     * @param $method
+     * @param array $inputs
+     * @return Response
+     * @throws ProxyMissingParamException
+     */
     public function makeRequest($method, Array $inputs) {
 
         $this->checkInputParams($inputs);
@@ -60,10 +68,22 @@ class Proxy {
 
         //Remove unuseful parameters from inputs
         $inputs = $this->removeQueryValue($inputs, $this->uriParam);
-        $inputs = $this->removeQueryValue($inputs, $this->reqAccessToken);
+        $inputs = $this->removeQueryValue($inputs, $this->requestMode);
 
         //Read cookie if exists
-        $parsedCookie = $this->tryParseCookie();
+        try {
+            $parsedCookie = $this->tryParseCookie();
+        }
+        catch (CookieExpiredException $ex) {
+            if (isset($this->redirectUri) && !empty($this->redirectUri)) {
+                return \Redirect::to($this->redirectUri);
+            }
+            throw new $ex;
+        }
+
+        Log::info('-------------------- BEGIN COOKIE ----------------------');
+        Log::info(var_export($parsedCookie, true));
+        Log::info('-------------------- END COOKIE ------------------------');
 
         //Send first HTTP request
         $proxyResponse = $this->replicateRequest($method, $uriVal, $inputs, $parsedCookie, false);
@@ -71,18 +91,20 @@ class Proxy {
         //Create cookie if not exists
         $cookie = null;
         if ($this->loginCall) {
-            $cookie = $this->createCookie($proxyResponse, $uriVal, $inputs[$this->clientIdParam]);
+            $clientId = (array_key_exists($this->clientIdParam, $inputs)) ? $inputs[$this->clientIdParam] : null;
+            $cookie = $this->createCookie($proxyResponse, $uriVal, $clientId);
         }
-        else {
+        else if (!$this->noCookie) {
             if ($proxyResponse->getStatusCode() !== 200 && array_key_exists(Proxy::REFRESH_TOKEN, $parsedCookie)) {
-                $oldInputs = $inputs;
-                $proxyResponse = $this->replicateRequest($method, $parsedCookie[Proxy::URI], $inputs, $parsedCookie, true);
+                //Get a new access token from refresh token
+                $proxyResponse = $this->replicateRequest($method, $parsedCookie[Proxy::URI], array(), $parsedCookie, true);
 
-                if ($proxyResponse->getStatusCode() === 200) {
+                $content = $proxyResponse->getContent();
+                if ($proxyResponse->getStatusCode() === 200 && array_key_exists(Proxy::ACCESS_TOKEN, $content)) {
+                    $parsedCookie[$this->accessTokenParam] = $content[$this->accessTokenParam];
+                    $parsedCookie[$this->refreshTokenParam] = $content[$this->refreshTokenParam];
+                    //Set a new cookie with updated access token and refresh token
                     $cookie = $this->createCookie($proxyResponse, $parsedCookie[Proxy::URI], $parsedCookie[Proxy::CLIENT_ID]);
-                   ///TODO: update access token
-                    // $inputs = $oldInputs;
-                    //$inputs[Proxy::ACCESS_TOKEN] = $proxyResponse->getContent()[Proxy::ACCESS_TOKEN];
                     $proxyResponse = $this->replicateRequest($method, $uriVal, $inputs, $parsedCookie, false);
                 }
                 else {
@@ -101,12 +123,21 @@ class Proxy {
      */
     private function setApiResponse($proxyResponse, $cookie) {
         $response = new Response($proxyResponse->getContent(), $proxyResponse->getStatusCode());
-        if ($this->loginCall) {
-            $response->setContent('');
+        if ($this->loginCall || isset($cookie)) {
+            if ($this->loginCall) {
+                $response->setContent(json_encode($this->successAccessToken()));
+            }
             $response->withCookie($cookie);
         }
 
         return $response;
+    }
+
+    private function successAccessToken() {
+        return array(
+            'success_code' => 'access_token_ok',
+            'success_message' => \Lang::get('api-proxy-laravel::messages.access_token_ok')
+        );
     }
 
     /**
@@ -140,7 +171,7 @@ class Proxy {
             $parsedCookie = json_decode($parsedCookie, true);
         }
         else {
-            if (!$this->loginCall) {
+            if (!$this->loginCall && !$this->noCookie) {
                 throw new CookieExpiredException();
             }
         }
@@ -149,7 +180,7 @@ class Proxy {
     }
 
     public function destroyCookie() {
-        Cookie::forget($this->cookieInfo['name']);
+        return Cookie::forget($this->cookieInfo['name']);
     }
 
     /**
@@ -160,7 +191,11 @@ class Proxy {
      * @throws MissingClientSecretException
      */
     private function changeInputParameters($inputs, $parsedCookie, $toRefresh) {
-        $refresh = (array_key_exists(Proxy::REFRESH_TOKEN, $parsedCookie)) ? $parsedCookie[Proxy::REFRESH_TOKEN] : null;
+        if ($this->noCookie) {
+            return $inputs;
+        }
+
+        $refresh = (isset($parsedCookie) && array_key_exists(Proxy::REFRESH_TOKEN, $parsedCookie)) ? $parsedCookie[Proxy::REFRESH_TOKEN] : null;
 
         if (isset($refresh) && $toRefresh) {
             //Add grant type value
@@ -173,11 +208,12 @@ class Proxy {
 
         if ($this->loginCall || $toRefresh) {
             //Get client secret key
-            $secret = $this->getClientSecret($inputs[$this->clientIdParam]);
-            //Add client secret value
-            $inputs = $this->addQueryValue($inputs, $this->clientSecretParam, $secret);
-        }
-        else {
+            if (array_key_exists($this->clientIdParam, $inputs)) {
+                $secret = $this->getClientSecret($inputs[$this->clientIdParam]);
+                //Add client secret value
+                $inputs = $this->addQueryValue($inputs, $this->clientSecretParam, $secret);
+            }
+        } else if (isset($parsedCookie)) {
             //Add access token value
             $inputs = $this->addQueryValue($inputs, $this->accessTokenParam, $parsedCookie[Proxy::ACCESS_TOKEN]);
         }
@@ -224,11 +260,16 @@ class Proxy {
         //If it is a login call add client secret else add access token read from cookie
         $inputs = $this->changeInputParameters($inputs, $parsedCookie, $toRefresh);
 
+        Log::info('<----------------------- BEGIN REQUEST ----------------------------------');
         Log::info(var_export($uriVal, true));
         Log::info(var_export($inputs, true));
+        Log::info('----------------------- END REQUEST ------------------------------------>');
         $guzzleResponse = $this->sendGuzzleRequest($method, $uriVal, $inputs);
         $client = (isset($parsedCookie)) ? $parsedCookie[Proxy::CLIENT_ID] : null;
+        Log::info('<----------------------- BEGIN RESPONSE ----------------------------------');
         Log::info(var_export($this->getResponseContent($guzzleResponse), true));
+        Log::info('----------------------- END RESPONSE ------------------------------------>');
+        Log::info('*************************************************************************');
 
         $proxyResponse = new ProxyResponse($client, $guzzleResponse->getStatusCode(), $guzzleResponse->getReasonPhrase(), $guzzleResponse->getProtocolVersion(), $this->getResponseContent($guzzleResponse));
 
@@ -275,9 +316,12 @@ class Proxy {
         }
 
         //Set if request is a login call
-        if (array_key_exists($this->reqAccessToken, $inputs)) {
-            if (strtolower($inputs[$this->reqAccessToken]) == 'true'  || strtolower($inputs[$this->reqAccessToken]) == 'y') {
+        if (array_key_exists($this->requestMode, $inputs)) {
+            if (strtolower($inputs[$this->requestMode]) == 'token') {
                 $this->loginCall = true;
+            }
+            else if (strtolower($inputs[$this->requestMode]) == 'skip') {
+                $this->noCookie = true;
             }
         }
     }

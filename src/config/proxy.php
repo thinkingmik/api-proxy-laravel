@@ -31,7 +31,18 @@ return [
       | GET http://laravel.dev/access_token?uri=http://api/token&client_id=myclient&username=xxx&password=xxx&token=true
       |
      */
-    'req_access_token' => 'token',
+    'request_mode' => 'mode',
+
+    /*
+      |--------------------------------------------------------------------------
+      | Set redirect URI
+      |--------------------------------------------------------------------------
+      |
+      | Set a redirect URI to call when the cookie expires. If you don't specify
+      | any URI, the proxy helper will return a 403 proxy_cookie_expired exception.
+      |
+     */
+    'redirect_login' => '',
 
     /*
       |--------------------------------------------------------------------------
@@ -44,7 +55,7 @@ return [
      */
     'cookie_info' => [
         'name' => 'proxify',
-        'time' => null
+        'time' => 1
     ],
 
     /*
