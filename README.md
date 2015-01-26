@@ -168,7 +168,7 @@ To protect an attacker just stealing the cookie you can use CSRF protection meas
 
 
 Thank you to Alex Bilbie for issue:
-http://alexbilbie.com/2014/11/oauth-and-javascript/?
+http://alexbilbie.com/2014/11/oauth-and-javascript
 
 ## Installation
 
@@ -185,7 +185,7 @@ Add the following line to the `require` section of `composer.json`:
 ## Setup
 
 1. Add `'Andreoli\ApiProxy\ApiProxyServiceProvider',` to the service provider list in `app/config/app.php`.
-2. Add `'Proxy' => 'Andreoli\ApiProxy\Facades\ApiProxyFacade',` to the list of aliases in `app/config/app.php`.
+2. Add `'Proxify' => 'Andreoli\ApiProxy\Facades\ApiProxyFacade',` to the list of aliases in `app/config/app.php`.
 
 ## Configuration
 
