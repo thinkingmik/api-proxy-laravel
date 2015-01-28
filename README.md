@@ -1,12 +1,12 @@
-PHP Api `proxy` for Laravel
+PHP Api Proxy for Laravel
 ================
 
-[![Latest Version](http://img.shields.io/github/release/mandreoli/api-`proxy`-laravel.svg?style=flat-square)](https://packagist.org/packages/andreoli/api-`proxy`-laravel)
+[![Latest Version](http://img.shields.io/github/release/mandreoli/api-proxy-laravel.svg?style=flat-square)](https://packagist.org/packages/andreoli/api-proxy-laravel)
 [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md)
-[![Build Status](https://img.shields.io/travis/mandreoli/api-`proxy`-laravel/master.svg?style=flat-square)](https://travis-ci.org/mandreoli/api-`proxy`-laravel)
-[![Code Quality](https://img.shields.io/scrutinizer/g/mandreoli/api-`proxy`-laravel.svg?style=flat-square)](https://scrutinizer-ci.com/g/mandreoli/api-`proxy`-laravel/?branch=master)
-[![Coverage Status](https://img.shields.io/scrutinizer/coverage/g/mandreoli/api-`proxy`-laravel.svg?style=flat-square)](https://scrutinizer-ci.com/g/mandreoli/api-`proxy`-laravel/code-structure)
-[![Total Downloads](https://img.shields.io/packagist/dt/andreoli/api-`proxy`-laravel.svg?style=flat-square)](https://packagist.org/packages/andreoli/api-`proxy`-laravel)
+[![Build Status](https://img.shields.io/travis/mandreoli/api-proxy-laravel/master.svg?style=flat-square)](https://travis-ci.org/mandreoli/api-proxy-laravel)
+[![Code Quality](https://img.shields.io/scrutinizer/g/mandreoli/api-proxy-laravel.svg?style=flat-square)](https://scrutinizer-ci.com/g/mandreoli/api-proxy-laravel/?branch=master)
+[![Coverage Status](https://img.shields.io/scrutinizer/coverage/g/mandreoli/api-proxy-laravel.svg?style=flat-square)](https://scrutinizer-ci.com/g/mandreoli/api-proxy-laravel/code-structure)
+[![Total Downloads](https://img.shields.io/packagist/dt/andreoli/api-proxy-laravel.svg?style=flat-square)](https://packagist.org/packages/andreoli/api-proxy-laravel)
 
 ## Summary
 
@@ -168,7 +168,7 @@ To protect an attacker just stealing the cookie you can use CSRF protection meas
 
 
 Thank you to Alex Bilbie for issue:
-http://alexbilbie.com/2014/11/oauth-and-javascript/?
+http://alexbilbie.com/2014/11/oauth-and-javascript
 
 ## Installation
 
@@ -185,7 +185,7 @@ Add the following line to the `require` section of `composer.json`:
 ## Setup
 
 1. Add `'Andreoli\ApiProxy\ApiProxyServiceProvider',` to the service provider list in `app/config/app.php`.
-2. Add `'Proxy' => 'Andreoli\ApiProxy\Facades\ApiProxyFacade',` to the list of aliases in `app/config/app.php`.
+2. Add `'Proxify' => 'Andreoli\ApiProxy\Facades\ApiProxyFacade',` to the list of aliases in `app/config/app.php`.
 
 ## Configuration
 
