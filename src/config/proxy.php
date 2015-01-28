@@ -68,6 +68,6 @@ return [
      */
     'client_secrets' => [
         'client_1' => 'abc123',
-        'client_2' => 'abc456'
+        'client_2' => 'def456'
     ],
 ];

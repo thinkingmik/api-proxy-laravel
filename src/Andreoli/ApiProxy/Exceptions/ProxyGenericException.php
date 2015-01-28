@@ -13,15 +13,15 @@ namespace Andreoli\ApiProxy\Exceptions;
 /**
  * Exception class
  */
-class CookieExpiredException extends ProxyException {
+class ProxyGenericException extends ProxyException {
 
     /**
-     * Throw a CookieExpiredException exception
+     * Throw a ProxyException exception
      */
-    public function __construct() {
-	    $this->httpStatusCode = 403;
-	    $this->errorType = 'proxy_cookie_expired';
-        parent::__construct(\Lang::get('api-proxy-laravel::messages.proxy_cookie_expired'));
+    public function __construct($message) {
+	    $this->httpStatusCode = 500;
+	    $this->errorType = 'proxy_generic_error';
+        parent::__construct($message);
     }
 
 }

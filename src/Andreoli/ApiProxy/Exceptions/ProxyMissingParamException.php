@@ -16,7 +16,7 @@ namespace Andreoli\ApiProxy\Exceptions;
 class ProxyMissingParamException extends ProxyException {
 
     /**
-     * Throw a new ProxyMissingParamException exception
+     * Throw a ProxyMissingParamException exception
      */
     public function __construct($parameter) {
 	    $this->httpStatusCode = 400;

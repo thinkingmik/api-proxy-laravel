@@ -16,7 +16,7 @@ namespace Andreoli\ApiProxy\Exceptions;
 class MissingClientSecretException extends ProxyException {
 
     /**
-     * Throw a new MissingClientSecretException exception
+     * Throw a MissingClientSecretException exception
      */
     public function __construct($parameter) {
 	    $this->httpStatusCode = 500;
