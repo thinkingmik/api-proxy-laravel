@@ -172,15 +172,7 @@ http://alexbilbie.com/2014/11/oauth-and-javascript
 
 ## Installation
 
-Add the following line to the `require` section of `composer.json`:
-
-```json
-{
-    "require": {
-        "andreoli/api-proxy-laravel": "1.*@dev"
-    }
-}
-```
+The release is not available now. I'm fixing code.
 
 ## Setup
 
