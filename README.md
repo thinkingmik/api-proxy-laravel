@@ -1,4 +1,4 @@
-PHP Api Proxy for Laravel
+PHP Api Proxy for Laravel [BETA]
 ================
 
 [![Latest Version](http://img.shields.io/github/release/mandreoli/api-proxy-laravel.svg?style=flat-square)](https://packagist.org/packages/andreoli/api-proxy-laravel)
