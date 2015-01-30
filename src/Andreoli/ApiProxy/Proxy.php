@@ -17,8 +17,6 @@ use Andreoli\ApiProxy\Models\CookieManager;
 use Andreoli\ApiProxy\Models\ProxyResponse;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
-use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
 
 class Proxy {
 
