@@ -23,15 +23,14 @@ return [
 
     /*
       |--------------------------------------------------------------------------
-      | Proxy input: define if proxy need to save access token into a cookie
+      | Proxy input: define the skip attribute
       |--------------------------------------------------------------------------
       |
-      | When proxy find this attribute in the request and its value is Y or TRUE
-      | the proxy knows that this is an access token request and creates a cookie.
-      | GET http://laravel.dev/access_token?uri=http://api/token&client_id=myclient&username=xxx&password=xxx&token=true
+      | When you call the proxy helper with this attribute set as true, the proxy calls
+      | the uri directly without pass to oauth server.
       |
      */
-    'request_mode' => 'mode',
+    'skip_param' => 'skip',
 
     /*
       |--------------------------------------------------------------------------
@@ -55,7 +54,7 @@ return [
      */
     'cookie_info' => [
         'name' => 'proxify',
-        'time' => 1
+        'time' => 5
     ],
 
     /*

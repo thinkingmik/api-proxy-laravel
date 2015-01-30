@@ -13,15 +13,15 @@ namespace Andreoli\ApiProxy\Exceptions;
 /**
  * Exception class
  */
-class ProxyGenericException extends ProxyException {
+class CookieInvalidException extends ProxyException {
 
     /**
-     * Throw a ProxyException exception
+     * Throw a CookieInvalidException exception
      */
-    public function __construct($message) {
+    public function __construct($parameter) {
 	    $this->httpStatusCode = 500;
-	    $this->errorType = 'proxy_generic_error';
-        parent::__construct($message);
+	    $this->errorType = 'proxy_cookie_invalid';
+        parent::__construct(\Lang::get('api-proxy-laravel::messages.proxy_cookie_invalid', array('param' => $parameter)));
     }
 
 }

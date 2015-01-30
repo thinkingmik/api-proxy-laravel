@@ -92,20 +92,21 @@ class ApiProxyServiceProvider extends ServiceProvider {
      */
     private function registerErrorHandlers() {
         $this->app->error(function(ProxyException $ex) {
-            if (\Request::ajax() && \Request::wantsJson()) {
+            //if (\Request::ajax() && \Request::wantsJson()) {
                 return new JsonResponse([
                     'error' => $ex->errorType,
                     'error_description' => $ex->getMessage()
                 ], $ex->httpStatusCode, $ex->getHttpHeaders()
                 );
-            }
-
+            //}
+/*
             return \View::make('api-proxy-laravel::proxy_error', array(
                 'header' => $ex->getHttpHeaders()[0],
                 'code' => $ex->httpStatusCode,
                 'error' => $ex->errorType,
                 'message' => $ex->getMessage()
             ));
+*/
         });
     }
 
