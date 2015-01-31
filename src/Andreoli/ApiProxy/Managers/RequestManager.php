@@ -23,6 +23,7 @@ class RequestManager {
     private $callMode = null;
     private $clientSecrets = null;
     private $cookieManager = null;
+    private $useHeader = false;
 
     public function __construct($uri, $method, $clientSecrets, $callMode, $cookieManager) {
         $this->uri = $uri;
@@ -30,6 +31,10 @@ class RequestManager {
         $this->clientSecrets = $clientSecrets;
         $this->callMode = $callMode;
         $this->cookieManager = $cookieManager;
+    }
+
+    public function enableHeader() {
+        $this->useHeader = true;
     }
 
     /**
@@ -80,6 +85,10 @@ class RequestManager {
     private function refreshToken($proxyResponse, $inputs, $parsedCookie) {
         $cookie = null;
         if ($proxyResponse->getStatusCode() != 200 && array_key_exists(ProxyAux::REFRESH_TOKEN, $parsedCookie)) {
+            $this->callMode = ProxyAux::MODE_REFRESH;
+
+            //TODO: remove and save additional params
+
             //Get a new access token from refresh token
             $inputs = $this->removeTokenExtraParams($inputs);
             $inputs = $this->addRefreshExtraParams($inputs, $parsedCookie);
@@ -87,8 +96,11 @@ class RequestManager {
 
             $content = $proxyResponse->getContent();
             if ($proxyResponse->getStatusCode() === 200 && array_key_exists(ProxyAux::ACCESS_TOKEN, $content)) {
+                $this->callMode = ProxyAux::MODE_TOKEN;
                 $parsedCookie[ProxyAux::ACCESS_TOKEN] = $content[ProxyAux::ACCESS_TOKEN];
                 $parsedCookie[ProxyAux::REFRESH_TOKEN] = $content[ProxyAux::REFRESH_TOKEN];
+
+                //TODO: add additional saved params
 
                 $inputs = $this->removeRefreshTokenExtraParams($inputs);
                 $inputs = $this->addTokenExtraParams($inputs, $parsedCookie);
@@ -96,6 +108,9 @@ class RequestManager {
 
                 //Set a new cookie with updated access token and refresh token
                 $cookie = $this->cookieManager->createCookie($parsedCookie);
+            }
+            else {
+                $cookie = $this->cookieManager->destroyCookie();
             }
         }
 
@@ -143,12 +158,20 @@ class RequestManager {
     private function sendGuzzleRequest($method, $uriVal, $inputs) {
         $options = array();
         $client = new Client();
+
+        if ($this->callMode === ProxyAux::MODE_TOKEN && $this->useHeader === true) {
+            $accessToken = ProxyAux::getQueryValue($inputs, ProxyAux::ACCESS_TOKEN);
+            $inputs = ProxyAux::removeQueryValue($inputs, ProxyAux::ACCESS_TOKEN);
+            $options = array_add($options, 'headers', [ ProxyAux::HEADER_AUTH => 'Bearer ' . $accessToken ]);
+        }
+
         if ($method === 'GET') {
             $options = array_add($options, 'query', $inputs);
         }
         else {
             $options = array_add($options, 'body', $inputs);
         }
+
         $request = $client->createRequest($method, $uriVal, $options);
 
         try {

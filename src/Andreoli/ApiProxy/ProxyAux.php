@@ -22,9 +22,11 @@ class ProxyAux {
     const COOKIE_URI = 'uri';
     const COOKIE_METHOD = 'method';
     const PASSWORD_GRANT = 'password';
+    const HEADER_AUTH = "Authorization";
     const MODE_SKIP = '0';
     const MODE_LOGIN = '1';
     const MODE_TOKEN = '2';
+    const MODE_REFRESH = '3';
 
     /**
      * @param $array

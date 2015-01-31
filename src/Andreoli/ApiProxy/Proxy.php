@@ -25,12 +25,14 @@ class Proxy {
     private $redirectUri = null;
     private $clientSecrets = null;
     private $cookieManager = null;
+    private $useHeader = false;
 
     public function __construct($params) {
         $this->uriParam = $params['uri_param'];
         $this->skipParam = $params['skip_param'];
         $this->redirectUri = $params['redirect_login'];
         $this->clientSecrets = $params['client_secrets'];
+        $this->useHeader = $params['use_header'];
         $this->cookieManager = new CookieManager($params['cookie_info']);
     }
 
@@ -66,6 +68,9 @@ class Proxy {
 
         //Create the new request
         $requestManager  = new RequestManager($this->uri, $method, $this->clientSecrets, $this->callMode, $this->cookieManager);
+        if ($this->useHeader) {
+            $requestManager->enableHeader();
+        }
         $proxyResponse = $requestManager->executeRequest($inputs, $parsedCookie);
 
         return $this->setApiResponse($proxyResponse['response'], $proxyResponse['cookie']);
