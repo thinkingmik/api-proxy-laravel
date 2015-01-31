@@ -1,4 +1,4 @@
-PHP Api Proxy for Laravel [BETA]
+PHP Api Proxy for Laravel
 ================
 
 [![Latest Version](http://img.shields.io/github/release/mandreoli/api-proxy-laravel.svg?style=flat-square)](https://packagist.org/packages/andreoli/api-proxy-laravel)
@@ -208,10 +208,18 @@ Host: example.com
 
 uri=http://example.com/public/oauth/access_token
 &grant_type=password
-&client_id=webapp
+[&client_id=webapp]
 &username=admin
 &password=mypassword
-&token=true
+[&skip=true]
+```
+
+```
+POST public/proxify HTTP/1.1
+Host: example.com
+
+uri=http://example.com/public/protected_resource
+[&skip=true]
 ```
 
 ### Facade
