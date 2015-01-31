@@ -120,7 +120,7 @@ class Proxy {
         if (array_key_exists($key, $array)) {
             return $array[$key];
         }
-        return "";
+        return null;
     }
 
     /**
