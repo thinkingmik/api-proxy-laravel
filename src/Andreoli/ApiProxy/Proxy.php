@@ -247,16 +247,7 @@ class Proxy {
     }
 
     private function replicateRequest($method, $uri, $inputs) {
-        Log::info('<----------------------- BEGIN REQUEST ----------------------------------');
-        Log::info(var_export($uri, true));
-        Log::info(var_export($inputs, true));
-        Log::info('----------------------- END REQUEST ------------------------------------>');
         $guzzleResponse = $this->sendGuzzleRequest($method, $uri, $inputs);
-        Log::info('<----------------------- BEGIN RESPONSE ----------------------------------');
-        Log::info(var_export($this->getResponseContent($guzzleResponse), true));
-        Log::info('----------------------- END RESPONSE ------------------------------------>');
-        Log::info('*************************************************************************');
-
         $proxyResponse = new ProxyResponse(null, $guzzleResponse->getStatusCode(), $guzzleResponse->getReasonPhrase(), $guzzleResponse->getProtocolVersion(), $this->getResponseContent($guzzleResponse));
 
         return $proxyResponse;
