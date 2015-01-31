@@ -15,9 +15,6 @@ namespace Andreoli\ApiProxy\Exceptions;
  */
 class CookieExpiredException extends ProxyException {
 
-    /**
-     * Throw a CookieExpiredException exception
-     */
     public function __construct() {
 	    $this->httpStatusCode = 403;
 	    $this->errorType = 'proxy_cookie_expired';

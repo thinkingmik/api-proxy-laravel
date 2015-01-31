@@ -15,9 +15,6 @@ namespace Andreoli\ApiProxy\Exceptions;
  */
 class CookieInvalidException extends ProxyException {
 
-    /**
-     * Throw a CookieInvalidException exception
-     */
     public function __construct($parameter) {
 	    $this->httpStatusCode = 500;
 	    $this->errorType = 'proxy_cookie_invalid';

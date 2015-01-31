@@ -30,16 +30,6 @@ class ApiProxyServiceProvider extends ServiceProvider {
      */
     public function boot() {
         $this->package('andreoli/api-proxy-laravel');
-
-        $this->bootFilters();
-    }
-
-    /**
-     * Boot the filters
-     * @return void
-     */
-    private function bootFilters() {
-
     }
 
     /**
@@ -50,7 +40,6 @@ class ApiProxyServiceProvider extends ServiceProvider {
     public function register() {
         $this->registerErrorHandlers();
         $this->registerApiProxy();
-        $this->registerFilterBindings();
     }
 
     /**
@@ -67,14 +56,6 @@ class ApiProxyServiceProvider extends ServiceProvider {
         $this->app->bind('Andreoli\ApiProxy\Proxy', function($app) {
             return $app['api-proxy.proxy'];
         });
-    }
-
-    /**
-     * Register the Filters to the IoC container because some filters need additional parameters
-     * @return void
-     */
-    public function registerFilterBindings() {
-
     }
 
     /**
