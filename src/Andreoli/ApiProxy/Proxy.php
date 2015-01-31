@@ -11,27 +11,12 @@
 namespace Andreoli\ApiProxy;
 
 use Andreoli\ApiProxy\Exceptions\CookieExpiredException;
-use Andreoli\ApiProxy\Exceptions\MissingClientSecretException;
 use Andreoli\ApiProxy\Exceptions\ProxyMissingParamException;
-use Andreoli\ApiProxy\Models\CookieManager;
-use Andreoli\ApiProxy\Models\ProxyResponse;
-use GuzzleHttp\Client;
-use GuzzleHttp\Exception\ClientException;
+use Andreoli\ApiProxy\Managers\CookieManager;
+use Andreoli\ApiProxy\Managers\RequestManager;
+use Illuminate\Http\Response;
 
 class Proxy {
-
-    const GRANT_TYPE = 'grant_type';
-    const ACCESS_TOKEN = 'access_token';
-    const TOKEN_TYPE = 'token_type';
-    const TOKEN_EXPIRES = 'expires_in';
-    const REFRESH_TOKEN = 'refresh_token';
-    const CLIENT_ID = 'client_id';
-    const CLIENT_SECRET = 'client_secret';
-    const COOKIE_URI = 'uri';
-    const PASSWORD_GRANT = 'password';
-    const MODE_SKIP = '0';
-    const MODE_LOGIN = '1';
-    const MODE_TOKEN = '2';
 
     private $uri = null;
     private $callMode = null;
@@ -49,6 +34,12 @@ class Proxy {
         $this->cookieManager = new CookieManager($params['cookie_info']);
     }
 
+    /**
+     * @param $method
+     * @param array $inputs
+     * @return Response
+     * @throws ProxyMissingParamException
+     */
     public function makeRequest($method, Array $inputs) {
         $this->checkMandatoriesInputParams($inputs);
         $this->uri = trim(urldecode($inputs[$this->uriParam]));
@@ -57,12 +48,12 @@ class Proxy {
         $this->callMode = $this->getRequestMode($inputs);
 
         //Remove unuseful parameters from inputs
-        $inputs = $this->removeQueryValue($inputs, $this->uriParam);
-        $inputs = $this->removeQueryValue($inputs, $this->skipParam);
+        $inputs = ProxyAux::removeQueryValue($inputs, $this->uriParam);
+        $inputs = ProxyAux::removeQueryValue($inputs, $this->skipParam);
 
         //Read the cookie if exists
         $parsedCookie = null;
-        if ($this->callMode !== Proxy::MODE_SKIP) {
+        if ($this->callMode !== ProxyAux::MODE_SKIP) {
             try {
                 $parsedCookie = $this->cookieManager->tryParseCookie($this->callMode);
             } catch (CookieExpiredException $ex) {
@@ -74,7 +65,8 @@ class Proxy {
         }
 
         //Create the new request
-        $proxyResponse = $this->executeRequest($method, $inputs, $parsedCookie);
+        $requestManager  = new RequestManager($this->uri, $method, $this->clientSecrets, $this->callMode, $this->cookieManager);
+        $proxyResponse = $requestManager->executeRequest($inputs, $parsedCookie);
 
         return $this->setApiResponse($proxyResponse['response'], $proxyResponse['cookie']);
     }
@@ -95,262 +87,20 @@ class Proxy {
      * @return string
      */
     private function getRequestMode($inputs) {
-        $grantType = $this->getQueryValue($inputs, Proxy::GRANT_TYPE);
-        $skip = $this->getQueryValue($inputs, $this->skipParam);
-        $mode = Proxy::MODE_TOKEN;
+        $grantType = ProxyAux::getQueryValue($inputs, ProxyAux::GRANT_TYPE);
+        $skip = ProxyAux::getQueryValue($inputs, $this->skipParam);
+        $mode = ProxyAux::MODE_TOKEN;
 
         if (isset($grantType)) {
-            if ($grantType === Proxy::PASSWORD_GRANT) {
-                $mode = Proxy::MODE_LOGIN;
+            if ($grantType === ProxyAux::PASSWORD_GRANT) {
+                $mode = ProxyAux::MODE_LOGIN;
             }
         }
         else if (isset($skip) && strtolower($skip) === 'true') {
-            $mode = Proxy::MODE_SKIP;
+            $mode = ProxyAux::MODE_SKIP;
         }
 
         return $mode;
-    }
-
-    /**
-     * @param $array
-     * @param $key
-     * @return null
-     */
-    private function getQueryValue($array, $key) {
-        if (array_key_exists($key, $array)) {
-            return $array[$key];
-        }
-        return null;
-    }
-
-    /**
-     * @param $array
-     * @param $key
-     * @return array
-     */
-    private function removeQueryValue($array, $key) {
-        if (array_key_exists($key, $array)) {
-            unset($array[$key]);
-        }
-        return $array;
-    }
-
-    /**
-     * @param $method
-     * @param $inputs
-     * @param $parsedCookie
-     * @return array
-     */
-    private function executeRequest($method, $inputs, $parsedCookie) {
-        $cookie = null;
-        switch ($this->callMode) {
-            case Proxy::MODE_LOGIN:
-                $inputs = $this->addLoginExtraParams($inputs);
-                $proxyResponse = $this->replicateRequest($method, $this->uri, $inputs);
-
-                $clientId = (array_key_exists(Proxy::CLIENT_ID, $inputs)) ? $inputs[Proxy::CLIENT_ID] : null;
-                $content = $proxyResponse->getContent();
-                $content = $this->addQueryValue($content, Proxy::COOKIE_URI, $this->uri);
-                $content = $this->addQueryValue($content, Proxy::CLIENT_ID, $clientId);
-
-                $cookie = $this->cookieManager->createCookie($content);
-                break;
-            case Proxy::MODE_TOKEN:
-                $inputs = $this->addTokenExtraParams($inputs, $parsedCookie);
-                $proxyResponse = $this->replicateRequest($method, $this->uri, $inputs);
-
-                //Get a new access token from refresh token if exists
-                if ($proxyResponse->getStatusCode() != 200 && array_key_exists(Proxy::REFRESH_TOKEN, $parsedCookie)) {
-                    //Get a new access token from refresh token
-                    $inputs = $this->removeTokenExtraParams($inputs);
-                    $inputs = $this->addRefreshExtraParams($inputs, $parsedCookie);
-                    $proxyResponse = $this->replicateRequest($method, $parsedCookie[Proxy::COOKIE_URI], $inputs);
-
-                    $content = $proxyResponse->getContent();
-                    if ($proxyResponse->getStatusCode() === 200 && array_key_exists(Proxy::ACCESS_TOKEN, $content)) {
-                        $parsedCookie[Proxy::ACCESS_TOKEN] = $content[Proxy::ACCESS_TOKEN];
-                        $parsedCookie[Proxy::REFRESH_TOKEN] = $content[Proxy::REFRESH_TOKEN];
-
-                        $inputs = $this->removeRefreshTokenExtraParams($inputs);
-                        $inputs = $this->addTokenExtraParams($inputs, $parsedCookie);
-                        $proxyResponse = $this->replicateRequest($method, $this->uri, $inputs);
-
-                        //Set a new cookie with updated access token and refresh token
-                        $cookie = $this->cookieManager->createCookie($parsedCookie);
-                    }
-                }
-                break;
-            default:
-                $proxyResponse = $this->replicateRequest($method, $this->uri, $inputs);
-        }
-
-        return array(
-            'response' => $proxyResponse,
-            'cookie' => $cookie
-        );
-    }
-
-    /**
-     * @param $inputs
-     * @return array
-     */
-    private function addLoginExtraParams($inputs) {
-        //Get client secret key
-        $clientId = (array_key_exists(Proxy::CLIENT_ID, $inputs)) ? $inputs[Proxy::CLIENT_ID] : null;
-        $clientInfo = $this->getClientInfo($clientId);
-
-        if (isset($clientInfo['id'])) {
-            $inputs = $this->addQueryValue($inputs, Proxy::CLIENT_ID, $clientInfo['id']);
-        }
-        if (isset($clientInfo['secret'])) {
-            $inputs = $this->addQueryValue($inputs, Proxy::CLIENT_SECRET, $clientInfo['secret']);
-        }
-
-        return $inputs;
-    }
-
-    /**
-     * @param $clientId
-     * @return array
-     * @throws MissingClientSecretException
-     */
-    private function getClientInfo($clientId) {
-        $info = ['id' => null, 'secret' => null];
-
-        if (isset($clientId)) {
-            if (!array_key_exists($clientId, $this->clientSecrets)) {
-                throw new MissingClientSecretException($clientId);
-            }
-            $info['id'] = $clientId;
-            $info['secret'] = $this->clientSecrets[$clientId];
-        }
-        else if (count($this->clientSecrets) >= 1) {
-            $firstKey = key($this->clientSecrets);
-            $info['id'] = $firstKey;
-            $info['secret'] = $this->clientSecrets[$firstKey];
-        }
-
-        return $info;
-    }
-
-    /**
-     * @param $array
-     * @param $key
-     * @param $value
-     * @return array
-     */
-    private function addQueryValue($array, $key, $value) {
-        if (array_key_exists($key, $array)) {
-            unset($array[$key]);
-        }
-        return array_add($array, $key, $value);
-    }
-
-    private function replicateRequest($method, $uri, $inputs) {
-        $guzzleResponse = $this->sendGuzzleRequest($method, $uri, $inputs);
-        $proxyResponse = new ProxyResponse(null, $guzzleResponse->getStatusCode(), $guzzleResponse->getReasonPhrase(), $guzzleResponse->getProtocolVersion(), $this->getResponseContent($guzzleResponse));
-
-        return $proxyResponse;
-    }
-
-    /**
-     * @param $method
-     * @param $uriVal
-     * @param $inputs
-     * @return \GuzzleHttp\Message\FutureResponse|\GuzzleHttp\Message\ResponseInterface|\GuzzleHttp\Ring\Future\FutureInterface|mixed|null
-     */
-    private function sendGuzzleRequest($method, $uriVal, $inputs) {
-        $options = array();
-        $client = new Client();
-        if ($method === 'GET') {
-            $options = array_add($options, 'query', $inputs);
-        }
-        else {
-            $options = array_add($options, 'body', $inputs);
-        }
-        $request = $client->createRequest($method, $uriVal, $options);
-
-        try {
-            $response = $client->send($request);
-        }
-        catch (ClientException $ex) {
-            $response = $ex->getResponse();
-        }
-
-        return $response;
-    }
-
-    /**
-     * @param $response
-     * @return mixed
-     */
-    private function getResponseContent($response) {
-        switch ($response->getHeader('content-type')) {
-            case 'application/json':
-                return $response->json();
-            case 'text/xml':
-            case 'application/xml':
-                return $response->xml();
-            default:
-                return $response->getBody();
-        }
-    }
-
-    /**
-     * @param $inputs
-     * @param $parsedCookie
-     * @return array
-     */
-    private function addTokenExtraParams($inputs, $parsedCookie) {
-        if (isset($parsedCookie[Proxy::ACCESS_TOKEN])) {
-            $inputs = $this->addQueryValue($inputs, Proxy::ACCESS_TOKEN, $parsedCookie[Proxy::ACCESS_TOKEN]);
-        }
-
-        return $inputs;
-    }
-
-    /**
-     * @param $inputs
-     * @param $parsedCookie
-     * @return array
-     */
-    private function addRefreshExtraParams($inputs, $parsedCookie) {
-        $inputs = $this->addQueryValue($inputs, Proxy::GRANT_TYPE, Proxy::REFRESH_TOKEN);
-        $inputs = $this->addQueryValue($inputs, Proxy::REFRESH_TOKEN, $parsedCookie[Proxy::REFRESH_TOKEN]);
-        if (isset($parsedCookie[Proxy::CLIENT_ID])) {
-            $clientInfo = $this->getClientInfo($parsedCookie[Proxy::CLIENT_ID]);
-            if (isset($clientInfo['id'])) {
-                $inputs = $this->addQueryValue($inputs, Proxy::CLIENT_ID, $clientInfo['id']);
-            }
-            if (isset($clientInfo['secret'])) {
-                $inputs = $this->addQueryValue($inputs, Proxy::CLIENT_SECRET, $clientInfo['secret']);
-            }
-        }
-
-        return $inputs;
-    }
-
-    /**
-     * @param $inputs
-     * @return array
-     */
-    private function removeTokenExtraParams($inputs) {
-        $inputs = $this->removeQueryValue($inputs, Proxy::ACCESS_TOKEN);
-
-        return $inputs;
-    }
-
-    /**
-     * @param $inputs
-     * @return array
-     */
-    private function removeRefreshTokenExtraParams($inputs) {
-        $inputs = $this->removeQueryValue($inputs, Proxy::GRANT_TYPE);
-        $inputs = $this->removeQueryValue($inputs, Proxy::REFRESH_TOKEN);
-        $inputs = $this->removeQueryValue($inputs, Proxy::CLIENT_ID);
-        $inputs = $this->removeQueryValue($inputs, Proxy::CLIENT_SECRET);
-
-        return $inputs;
     }
 
     /**
@@ -361,7 +111,7 @@ class Proxy {
     private function setApiResponse($proxyResponse, $cookie) {
         $response = new Response($proxyResponse->getContent(), $proxyResponse->getStatusCode());
 
-        if ($this->callMode === Proxy::MODE_LOGIN) {
+        if ($this->callMode === ProxyAux::MODE_LOGIN) {
             $response->setContent(json_encode($this->successAccessToken()));
         }
         if (isset($cookie)) {
