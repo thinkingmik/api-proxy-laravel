@@ -172,7 +172,15 @@ http://alexbilbie.com/2014/11/oauth-and-javascript
 
 ## Installation
 
-The release is not available now. I'm fixing code.
+Add the following line to the `require` section of `composer.json`:
+
+```json
+{
+    "require": {
+        "andreoli/api-proxy-laravel": "1.*@dev"
+    }
+}
+```
 
 ## Setup
 
@@ -200,7 +208,7 @@ Route::match(array('GET', 'POST'), '/proxify', function()
 });
 ```
 
-This is your proxy endpoint and then you can call proxy like:
+This is your proxy endpoint and then you can call proxy to get an access token:
 
 ```
 POST public/proxify HTTP/1.1
@@ -214,6 +222,8 @@ uri=http://example.com/public/oauth/access_token
 [&skip=true]
 ```
 
+And after you can call the protected resource:
+
 ```
 POST public/proxify HTTP/1.1
 Host: example.com
@@ -221,6 +231,9 @@ Host: example.com
 uri=http://example.com/public/protected_resource
 [&skip=true]
 ```
+
+This `Proxy` package works great with [oauth2-server-laravel](https://github.com/lucadegasperi/oauth2-server-laravel) written
+by [Luca Degasperi](https://github.com/lucadegasperi).
 
 ### Facade
 
@@ -236,12 +249,6 @@ The methods available are:
  * @throws ProxyMissingParamException
  */
 Proxify::makeRequest(Request::method(), Input::all());
-
-/**
- * Use this method in the laravel route file to force 
- * the deletion of cookie
- */
-Proxify::destroyCookie();
 ```
 
 ## License
