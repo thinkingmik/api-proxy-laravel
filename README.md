@@ -231,6 +231,9 @@ Host: example.com
 uri=http://example.com/public/protected_resource
 ```
 
+If the `access_token` expires and you have got a `refresh_token`, `ApiProxy` will call the OAuth server
+for you and refresh the `access_token` with a new one. After that it makes a new call to the protected resource.
+
 This `ApiProxy` package works great with [oauth2-server-laravel](https://github.com/lucadegasperi/oauth2-server-laravel) written
 by [Luca Degasperi](https://github.com/lucadegasperi).
 I have used this package for my tests.
