@@ -93,12 +93,10 @@ class RequestManager {
     private function tryRefreshToken($inputs, $parsedCookie) {
         $this->callMode = ProxyAux::MODE_REFRESH;
 
-        //TODO: remove and save additional params
-
         //Get a new access token from refresh token
         $inputs = $this->removeTokenExtraParams($inputs);
-        $inputs = $this->addRefreshExtraParams($inputs, $parsedCookie);
-        $proxyResponse = $this->replicateRequest($parsedCookie[ProxyAux::COOKIE_METHOD], $parsedCookie[ProxyAux::COOKIE_URI], $inputs);
+        $params = $this->addRefreshExtraParams(array(), $parsedCookie);
+        $proxyResponse = $this->replicateRequest($parsedCookie[ProxyAux::COOKIE_METHOD], $parsedCookie[ProxyAux::COOKIE_URI], $params);
 
         $content = $proxyResponse->getContent();
         if ($proxyResponse->getStatusCode() === 200 && array_key_exists(ProxyAux::ACCESS_TOKEN, $content)) {
@@ -106,9 +104,6 @@ class RequestManager {
             $parsedCookie[ProxyAux::ACCESS_TOKEN] = $content[ProxyAux::ACCESS_TOKEN];
             $parsedCookie[ProxyAux::REFRESH_TOKEN] = $content[ProxyAux::REFRESH_TOKEN];
 
-            //TODO: add additional saved params
-
-            $inputs = $this->removeRefreshTokenExtraParams($inputs);
             $inputs = $this->addTokenExtraParams($inputs, $parsedCookie);
             $proxyResponse = $this->replicateRequest($this->method, $this->uri, $inputs);
 
@@ -133,7 +128,7 @@ class RequestManager {
      */
     private function replicateRequest($method, $uri, $inputs) {
         $guzzleResponse = $this->sendGuzzleRequest($method, $uri, $inputs);
-        $proxyResponse = new ProxyResponse(null, $guzzleResponse->getStatusCode(), $guzzleResponse->getReasonPhrase(), $guzzleResponse->getProtocolVersion(), $this->getResponseContent($guzzleResponse));
+        $proxyResponse = new ProxyResponse($guzzleResponse->getStatusCode(), $guzzleResponse->getReasonPhrase(), $guzzleResponse->getProtocolVersion(), $this->getResponseContent($guzzleResponse));
 
         return $proxyResponse;
     }
@@ -276,17 +271,4 @@ class RequestManager {
         return $inputs;
     }
 
-    /**
-     * @param $inputs
-     * @return array
-     */
-    private function removeRefreshTokenExtraParams($inputs) {
-        $inputs = ProxyAux::removeQueryValue($inputs, ProxyAux::GRANT_TYPE);
-        $inputs = ProxyAux::removeQueryValue($inputs, ProxyAux::REFRESH_TOKEN);
-        $inputs = ProxyAux::removeQueryValue($inputs, ProxyAux::CLIENT_ID);
-        $inputs = ProxyAux::removeQueryValue($inputs, ProxyAux::CLIENT_SECRET);
-
-        return $inputs;
-    }
-    
 }

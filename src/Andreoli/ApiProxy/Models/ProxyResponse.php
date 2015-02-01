@@ -12,22 +12,16 @@ namespace Andreoli\ApiProxy\Models;
 
 class ProxyResponse {
 
-    private $clientId = null;
     private $statusCode = null;
     private $reasonPhrase = null;
     private $protocolVersion = null;
     private $content = null;
 
-    public function __construct($clientId, $statusCode, $reasonPhrase, $protoVersion, $content) {
-        $this->clientId = $clientId;
+    public function __construct($statusCode, $reasonPhrase, $protoVersion, $content) {
         $this->statusCode = $statusCode;
         $this->reasonPhrase = $reasonPhrase;
         $this->protocolVersion = $protoVersion;
         $this->content = $content;
-    }
-
-    public function setClientId($client) {
-        $this->clientId = $client;
     }
 
     public function setStatusCode($status) {
@@ -44,10 +38,6 @@ class ProxyResponse {
 
     public function setContent($content) {
         $this->content = $content;
-    }
-
-    public function getClientId() {
-        return $this->clientId;
     }
 
     public function getStatusCode() {
