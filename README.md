@@ -20,7 +20,7 @@ PHP Api Proxy for Laravel
 
 ## Introduction
 
-This package would be a solution about the issue opened by Alex Bilbie.
+This package would be a solution about the issue opened by [Alex Bilbie](http://alexbilbie.com/2014/11/oauth-and-javascript) for issue.
 He says:
 
 Let's assume that you've just made a shiny Angular/Ember/Backbone whatever single page web-app that gets all of it's 
@@ -167,7 +167,7 @@ coming from the web server directly will be allowed.
 To protect an attacker just stealing the cookie you can use CSRF protection measures.
 
 
-Thank you to Alex Bilbie for issue:
+Thank you to [Alex Bilbie](http://alexbilbie.com) for issue:
 http://alexbilbie.com/2014/11/oauth-and-javascript
 
 ## Installation
@@ -208,7 +208,8 @@ Route::match(array('GET', 'POST'), '/proxify', function()
 });
 ```
 
-This is your proxy endpoint and then you can call proxy to get an access token:
+This is your proxy endpoint, then you can call proxy to get an access token (the `client_id` parameter is optional):
+
 
 ```
 POST public/proxify HTTP/1.1
@@ -219,7 +220,6 @@ uri=http://example.com/public/oauth/access_token
 [&client_id=webapp]
 &username=admin
 &password=mypassword
-[&skip=true]
 ```
 
 And after you can call the protected resource:
@@ -229,16 +229,16 @@ POST public/proxify HTTP/1.1
 Host: example.com
 
 uri=http://example.com/public/protected_resource
-[&skip=true]
 ```
 
-This `Proxy` package works great with [oauth2-server-laravel](https://github.com/lucadegasperi/oauth2-server-laravel) written
+This `ApiProxy` package works great with [oauth2-server-laravel](https://github.com/lucadegasperi/oauth2-server-laravel) written
 by [Luca Degasperi](https://github.com/lucadegasperi).
+I have used this package for my tests.
 
 ### Facade
 
 The `ApiProxy` is available through the Facade Acl or through the acl service in the IOC container.
-The methods available are:
+The method available is:
 
 ```php
 /**
