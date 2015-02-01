@@ -84,9 +84,6 @@ class CookieManager {
         if (!array_key_exists(ProxyAux::TOKEN_EXPIRES, $parsedCookie)) {
             throw new CookieInvalidException(ProxyAux::TOKEN_EXPIRES);
         }
-        if (!array_key_exists(ProxyAux::REFRESH_TOKEN, $parsedCookie)) {
-            throw new CookieInvalidException(ProxyAux::REFRESH_TOKEN);
-        }
         if (!array_key_exists(ProxyAux::COOKIE_URI, $parsedCookie)) {
             throw new CookieInvalidException(ProxyAux::COOKIE_URI);
         }

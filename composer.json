@@ -6,7 +6,8 @@
         "API",
         "ajax",
         "proxy",
-        "javascript"
+        "javascript",
+        "oauth"
     ],
     "authors": [
         {

@@ -62,9 +62,18 @@ class RequestManager {
                 $proxyResponse = $this->replicateRequest($this->method, $this->uri, $inputs);
 
                 //Get a new access token from refresh token if exists
-                $ret = $this->refreshToken($proxyResponse, $inputs, $parsedCookie);
-                $proxyResponse = $ret['response'];
-                $cookie = $ret['cookie'];
+                $cookie = null;
+                if ($proxyResponse->getStatusCode() != 200) {
+                    if (array_key_exists(ProxyAux::REFRESH_TOKEN, $parsedCookie)) {
+                        $ret = $this->tryRefreshToken($inputs, $parsedCookie);
+                    }
+                    else {
+                        $cookie = $this->cookieManager->destroyCookie();
+                    }
+                }
+
+                $proxyResponse = (isset($ret)) ? $ret['response'] : $proxyResponse;
+                $cookie = (isset($ret)) ? $ret['cookie'] : $cookie;
                 break;
             default:
                 $proxyResponse = $this->replicateRequest($this->method, $this->uri, $inputs);
@@ -77,41 +86,37 @@ class RequestManager {
     }
 
     /**
-     * @param $proxyResponse
      * @param $inputs
      * @param $parsedCookie
      * @return array
      */
-    private function refreshToken($proxyResponse, $inputs, $parsedCookie) {
-        $cookie = null;
-        if ($proxyResponse->getStatusCode() != 200 && array_key_exists(ProxyAux::REFRESH_TOKEN, $parsedCookie)) {
-            $this->callMode = ProxyAux::MODE_REFRESH;
+    private function tryRefreshToken($inputs, $parsedCookie) {
+        $this->callMode = ProxyAux::MODE_REFRESH;
 
-            //TODO: remove and save additional params
+        //TODO: remove and save additional params
 
-            //Get a new access token from refresh token
-            $inputs = $this->removeTokenExtraParams($inputs);
-            $inputs = $this->addRefreshExtraParams($inputs, $parsedCookie);
-            $proxyResponse = $this->replicateRequest($parsedCookie[ProxyAux::COOKIE_METHOD], $parsedCookie[ProxyAux::COOKIE_URI], $inputs);
+        //Get a new access token from refresh token
+        $inputs = $this->removeTokenExtraParams($inputs);
+        $inputs = $this->addRefreshExtraParams($inputs, $parsedCookie);
+        $proxyResponse = $this->replicateRequest($parsedCookie[ProxyAux::COOKIE_METHOD], $parsedCookie[ProxyAux::COOKIE_URI], $inputs);
 
-            $content = $proxyResponse->getContent();
-            if ($proxyResponse->getStatusCode() === 200 && array_key_exists(ProxyAux::ACCESS_TOKEN, $content)) {
-                $this->callMode = ProxyAux::MODE_TOKEN;
-                $parsedCookie[ProxyAux::ACCESS_TOKEN] = $content[ProxyAux::ACCESS_TOKEN];
-                $parsedCookie[ProxyAux::REFRESH_TOKEN] = $content[ProxyAux::REFRESH_TOKEN];
+        $content = $proxyResponse->getContent();
+        if ($proxyResponse->getStatusCode() === 200 && array_key_exists(ProxyAux::ACCESS_TOKEN, $content)) {
+            $this->callMode = ProxyAux::MODE_TOKEN;
+            $parsedCookie[ProxyAux::ACCESS_TOKEN] = $content[ProxyAux::ACCESS_TOKEN];
+            $parsedCookie[ProxyAux::REFRESH_TOKEN] = $content[ProxyAux::REFRESH_TOKEN];
 
-                //TODO: add additional saved params
+            //TODO: add additional saved params
 
-                $inputs = $this->removeRefreshTokenExtraParams($inputs);
-                $inputs = $this->addTokenExtraParams($inputs, $parsedCookie);
-                $proxyResponse = $this->replicateRequest($this->method, $this->uri, $inputs);
+            $inputs = $this->removeRefreshTokenExtraParams($inputs);
+            $inputs = $this->addTokenExtraParams($inputs, $parsedCookie);
+            $proxyResponse = $this->replicateRequest($this->method, $this->uri, $inputs);
 
-                //Set a new cookie with updated access token and refresh token
-                $cookie = $this->cookieManager->createCookie($parsedCookie);
-            }
-            else {
-                $cookie = $this->cookieManager->destroyCookie();
-            }
+            //Set a new cookie with updated access token and refresh token
+            $cookie = $this->cookieManager->createCookie($parsedCookie);
+        }
+        else {
+            $cookie = $this->cookieManager->destroyCookie();
         }
 
         return array(

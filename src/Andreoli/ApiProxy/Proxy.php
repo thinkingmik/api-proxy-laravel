@@ -27,6 +27,9 @@ class Proxy {
     private $cookieManager = null;
     private $useHeader = false;
 
+    /**
+     * @param $params
+     */
     public function __construct($params) {
         $this->uriParam = $params['uri_param'];
         $this->skipParam = $params['skip_param'];
@@ -40,7 +43,9 @@ class Proxy {
      * @param $method
      * @param array $inputs
      * @return Response
+     * @throws CookieExpiredException
      * @throws ProxyMissingParamException
+     * @throws \Exception
      */
     public function makeRequest($method, Array $inputs) {
         $this->checkMandatoriesInputParams($inputs);
@@ -49,7 +54,7 @@ class Proxy {
         //Retrieve the call mode from input parameters
         $this->callMode = $this->getRequestMode($inputs);
 
-        //Remove unuseful parameters from inputs
+        //Remove parameters from inputs
         $inputs = ProxyAux::removeQueryValue($inputs, $this->uriParam);
         $inputs = ProxyAux::removeQueryValue($inputs, $this->skipParam);
 
@@ -62,7 +67,7 @@ class Proxy {
                 if (isset($this->redirectUri) && !empty($this->redirectUri)) {
                     return \Redirect::to($this->redirectUri);
                 }
-                throw new $ex;
+                throw $ex;
             }
         }
 
