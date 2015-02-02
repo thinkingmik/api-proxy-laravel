@@ -240,7 +240,7 @@ I have used this package for my tests.
 
 ### Facade
 
-The `ApiProxy` is available through the Facade Acl or through the acl service in the IOC container.
+The `ApiProxy` is available through the Facade `Proxify` or through the acl service in the IOC container.
 The method available is:
 
 ```php
