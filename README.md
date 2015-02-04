@@ -20,7 +20,7 @@ PHP Api Proxy for Laravel
 
 ## Introduction
 
-This package would be a solution about the issue opened by [Alex Bilbie](http://alexbilbie.com/2014/11/oauth-and-javascript) for issue.
+This package would be a solution about the issue opened by [Alex Bilbie](http://alexbilbie.com/2014/11/oauth-and-javascript).
 He says:
 
 Let's assume that you've just made a shiny Angular/Ember/Backbone whatever single page web-app that gets all of it's 
