@@ -13,6 +13,7 @@ namespace Andreoli\ApiProxy\Managers;
 use Andreoli\ApiProxy\Exceptions\CookieExpiredException;
 use Andreoli\ApiProxy\Exceptions\CookieInvalidException;
 use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Facades\Log;
 use Andreoli\ApiProxy\ProxyAux;
 
 class CookieManager {
@@ -36,6 +37,7 @@ class CookieManager {
 
         if (isset($parsedCookie)) {
             $parsedCookie = json_decode($parsedCookie, true);
+            Log::info(var_export($parsedCookie, true));
             $this->validateCookie($parsedCookie);
         }
         else {
@@ -49,14 +51,19 @@ class CookieManager {
 
     /**
      * @param array $content
+     * @param bool $queue
      * @return mixed
      */
-    public function createCookie(Array $content) {
-        if (!isset($this->info[CookieManager::COOKIE_TIME]) || $this->info[CookieManager::COOKIE_TIME] == null) {
-            $cookie = Cookie::forever($this->info[CookieManager::COOKIE_NAME], json_encode($content));
+    public function createCookie(Array $content, $queue = false) {
+        if (!isset($queue) || $queue === false) {
+            if (!isset($this->info[CookieManager::COOKIE_TIME]) || $this->info[CookieManager::COOKIE_TIME] == null) {
+                $cookie = Cookie::forever($this->info[CookieManager::COOKIE_NAME], json_encode($content));
+            } else {
+                $cookie = Cookie::make($this->info[CookieManager::COOKIE_NAME], json_encode($content), $this->info[CookieManager::COOKIE_TIME]);
+            }
         }
         else {
-            $cookie = Cookie::make($this->info[CookieManager::COOKIE_NAME], json_encode($content), $this->info[CookieManager::COOKIE_TIME]);
+            $cookie = Cookie::queue($this->info[CookieManager::COOKIE_NAME], json_encode($content), $this->info[CookieManager::COOKIE_TIME]);
         }
 
         return $cookie;

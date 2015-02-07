@@ -12,6 +12,7 @@ namespace Andreoli\ApiProxy\Managers;
 
 use Andreoli\ApiProxy\ProxyAux;
 use Andreoli\ApiProxy\Models\ProxyResponse;
+use Andreoli\ApiProxy\Models\MixResponse;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use Andreoli\ApiProxy\Exceptions\MissingClientSecretException;
@@ -43,46 +44,69 @@ class RequestManager {
      * @return array
      */
     public function executeRequest($inputs, $parsedCookie) {
-        $cookie = null;
         switch ($this->callMode) {
             case ProxyAux::MODE_LOGIN:
-                $inputs = $this->addLoginExtraParams($inputs);
-                $proxyResponse = $this->replicateRequest($this->method, $this->uri, $inputs);
-
-                $clientId = (array_key_exists(ProxyAux::CLIENT_ID, $inputs)) ? $inputs[ProxyAux::CLIENT_ID] : null;
-                $content = $proxyResponse->getContent();
-                $content = ProxyAux::addQueryValue($content, ProxyAux::COOKIE_URI, $this->uri);
-                $content = ProxyAux::addQueryValue($content, ProxyAux::COOKIE_METHOD, $this->method);
-                $content = ProxyAux::addQueryValue($content, ProxyAux::CLIENT_ID, $clientId);
-
-                $cookie = $this->cookieManager->createCookie($content);
+                $mixed = $this->execAccess($inputs);
                 break;
             case ProxyAux::MODE_TOKEN:
-                $inputs = $this->addTokenExtraParams($inputs, $parsedCookie);
-                $proxyResponse = $this->replicateRequest($this->method, $this->uri, $inputs);
-
-                //Get a new access token from refresh token if exists
-                $cookie = null;
-                if ($proxyResponse->getStatusCode() != 200) {
-                    if (array_key_exists(ProxyAux::REFRESH_TOKEN, $parsedCookie)) {
-                        $ret = $this->tryRefreshToken($inputs, $parsedCookie);
-                    }
-                    else {
-                        $cookie = $this->cookieManager->destroyCookie();
-                    }
-                }
-
-                $proxyResponse = (isset($ret)) ? $ret['response'] : $proxyResponse;
-                $cookie = (isset($ret)) ? $ret['cookie'] : $cookie;
+                $mixed = $this->execRefresh($inputs, $parsedCookie);
                 break;
             default:
                 $proxyResponse = $this->replicateRequest($this->method, $this->uri, $inputs);
+                $mixed = new MixResponse($proxyResponse, null);
         }
 
-        return array(
-            'response' => $proxyResponse,
-            'cookie' => $cookie
-        );
+        return $mixed;
+    }
+
+    /**
+     * @param array $inputs
+     * @return MixResponse
+     */
+    private function execAccess(Array $inputs) {
+        $cookie = null;
+        $inputs = $this->addLoginExtraParams($inputs);
+        $proxyResponse = $this->replicateRequest($this->method, $this->uri, $inputs);
+
+        if ($proxyResponse->getStatusCode() === 200) {
+            $clientId = (array_key_exists(ProxyAux::CLIENT_ID, $inputs)) ? $inputs[ProxyAux::CLIENT_ID] : null;
+            $content = $proxyResponse->getContent();
+            $content = ProxyAux::addQueryValue($content, ProxyAux::COOKIE_URI, $this->uri);
+            $content = ProxyAux::addQueryValue($content, ProxyAux::COOKIE_METHOD, $this->method);
+            $content = ProxyAux::addQueryValue($content, ProxyAux::CLIENT_ID, $clientId);
+
+            $cookie = $this->cookieManager->createCookie($content);
+        }
+
+        $mixed = new MixResponse($proxyResponse, $cookie);
+        return $mixed;
+    }
+
+    /**
+     * @param array $inputs
+     * @param $parsedCookie
+     * @return MixResponse
+     */
+    private function execRefresh(Array $inputs, $parsedCookie) {
+        $inputs = $this->addTokenExtraParams($inputs, $parsedCookie);
+        $proxyResponse = $this->replicateRequest($this->method, $this->uri, $inputs);
+
+        //Get a new access token from refresh token if exists
+        $cookie = null;
+        if ($proxyResponse->getStatusCode() != 200) {
+            if (array_key_exists(ProxyAux::REFRESH_TOKEN, $parsedCookie)) {
+                $ret = $this->tryRefreshToken($inputs, $parsedCookie);
+            }
+            else {
+                $cookie = $this->cookieManager->destroyCookie();
+            }
+        }
+
+        $proxyResponse = (isset($ret)) ? $ret['response'] : $proxyResponse;
+        $cookie = (isset($ret)) ? $ret['cookie'] : $cookie;
+        $mixed = new MixResponse($proxyResponse, $cookie);
+
+        return $mixed;
     }
 
     /**

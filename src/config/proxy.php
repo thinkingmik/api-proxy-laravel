@@ -26,7 +26,7 @@ return [
       | Proxy input: define the skip attribute
       |--------------------------------------------------------------------------
       |
-      | When you call the proxy helper with this attribute set as true, the proxy calls
+      | When you call the proxy helper with this attribute set as true, you can call
       | the uri directly without pass to oauth server.
       |
      */
@@ -65,14 +65,15 @@ return [
       | If it is true the access_token was sent to oauth server into request's header.
       |
      */
-    'use_header' => false,
+    'use_header' => true,
 
     /*
       |--------------------------------------------------------------------------
       |  List of client secret
       |--------------------------------------------------------------------------
       |
-      | Define secrets key for each clients you need.
+      | Define secrets key for each clients you need. The first is the default client
+      | when you don't set client_id param in the request.
       |
      */
     'client_secrets' => [

@@ -76,9 +76,9 @@ class Proxy {
         if ($this->useHeader) {
             $requestManager->enableHeader();
         }
-        $proxyResponse = $requestManager->executeRequest($inputs, $parsedCookie);
+        $mixResponse = $requestManager->executeRequest($inputs, $parsedCookie);
 
-        return $this->setApiResponse($proxyResponse['response'], $proxyResponse['cookie']);
+        return $this->setApiResponse($mixResponse->getResponse(), $mixResponse->getCookie());
     }
 
     /**
@@ -121,11 +121,13 @@ class Proxy {
     private function setApiResponse($proxyResponse, $cookie) {
         $response = new Response($proxyResponse->getContent(), $proxyResponse->getStatusCode());
 
-        if ($this->callMode === ProxyAux::MODE_LOGIN) {
-            $response->setContent(json_encode($this->successAccessToken()));
-        }
-        if (isset($cookie)) {
-            $response->withCookie($cookie);
+        if ($proxyResponse->getStatusCode() === 200) {
+            if ($this->callMode === ProxyAux::MODE_LOGIN) {
+                $response->setContent(json_encode($this->successAccessToken()));
+            }
+            if (isset($cookie)) {
+                $response->withCookie($cookie);
+            }
         }
 
         return $response;
