@@ -13,7 +13,6 @@ namespace Andreoli\ApiProxy\Managers;
 use Andreoli\ApiProxy\Exceptions\CookieExpiredException;
 use Andreoli\ApiProxy\Exceptions\CookieInvalidException;
 use Illuminate\Support\Facades\Cookie;
-use Illuminate\Support\Facades\Log;
 use Andreoli\ApiProxy\ProxyAux;
 
 class CookieManager {
@@ -37,7 +36,6 @@ class CookieManager {
 
         if (isset($parsedCookie)) {
             $parsedCookie = json_decode($parsedCookie, true);
-            Log::info(var_export($parsedCookie, true));
             $this->validateCookie($parsedCookie);
         }
         else {
