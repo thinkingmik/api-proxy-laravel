@@ -65,7 +65,7 @@ return [
       | If it is true the access_token was sent to oauth server into request's header.
       |
      */
-    'use_header' => true,
+    'use_header' => false,
 
     /*
       |--------------------------------------------------------------------------

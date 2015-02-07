@@ -93,18 +93,17 @@ class RequestManager {
 
         //Get a new access token from refresh token if exists
         $cookie = null;
+        $mixed = new MixResponse($proxyResponse, $cookie);
+
         if ($proxyResponse->getStatusCode() != 200) {
             if (array_key_exists(ProxyAux::REFRESH_TOKEN, $parsedCookie)) {
-                $ret = $this->tryRefreshToken($inputs, $parsedCookie);
+                $mixed = $this->tryRefreshToken($inputs, $parsedCookie);
             }
             else {
                 $cookie = $this->cookieManager->destroyCookie();
+                $mixed->setCookie($cookie);
             }
         }
-
-        $proxyResponse = (isset($ret)) ? $ret['response'] : $proxyResponse;
-        $cookie = (isset($ret)) ? $ret['cookie'] : $cookie;
-        $mixed = new MixResponse($proxyResponse, $cookie);
 
         return $mixed;
     }
@@ -112,7 +111,7 @@ class RequestManager {
     /**
      * @param $inputs
      * @param $parsedCookie
-     * @return array
+     * @return MixResponse
      */
     private function tryRefreshToken($inputs, $parsedCookie) {
         $this->callMode = ProxyAux::MODE_REFRESH;
@@ -138,10 +137,9 @@ class RequestManager {
             $cookie = $this->cookieManager->destroyCookie();
         }
 
-        return array(
-            'response' => $proxyResponse,
-            'cookie' => $cookie
-        );
+        $mixed = new MixResponse($proxyResponse, $cookie);
+
+        return $mixed;
     }
 
     /**
