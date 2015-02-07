@@ -49,19 +49,15 @@ class CookieManager {
 
     /**
      * @param array $content
-     * @param bool $queue
      * @return mixed
      */
-    public function createCookie(Array $content, $queue = false) {
+    public function createCookie(Array $content) {
         if (!isset($queue) || $queue === false) {
             if (!isset($this->info[CookieManager::COOKIE_TIME]) || $this->info[CookieManager::COOKIE_TIME] == null) {
                 $cookie = Cookie::forever($this->info[CookieManager::COOKIE_NAME], json_encode($content));
             } else {
                 $cookie = Cookie::make($this->info[CookieManager::COOKIE_NAME], json_encode($content), $this->info[CookieManager::COOKIE_TIME]);
             }
-        }
-        else {
-            $cookie = Cookie::queue($this->info[CookieManager::COOKIE_NAME], json_encode($content), $this->info[CookieManager::COOKIE_TIME]);
         }
 
         return $cookie;
