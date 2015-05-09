@@ -5,7 +5,6 @@ PHP Api Proxy for Laravel
 [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md)
 [![Build Status](https://img.shields.io/travis/thinkingmik/api-proxy-laravel/master.svg?style=flat-square)](https://travis-ci.org/thinkingmik/api-proxy-laravel)
 [![Code Quality](https://img.shields.io/scrutinizer/g/thinkingmik/api-proxy-laravel.svg?style=flat-square)](https://scrutinizer-ci.com/g/thinkingmik/api-proxy-laravel/?branch=master)
-[![Coverage Status](https://img.shields.io/scrutinizer/coverage/g/thinkingmik/api-proxy-laravel.svg?style=flat-square)](https://scrutinizer-ci.com/g/thinkingmik/api-proxy-laravel/code-structure)
 [![Total Downloads](https://img.shields.io/packagist/dt/thinkingmik/api-proxy-laravel.svg?style=flat-square)](https://packagist.org/packages/thinkingmik/api-proxy-laravel)
 
 ## Summary
