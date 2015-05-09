@@ -176,7 +176,7 @@ Add the following line to the `require` section of `composer.json`:
 ```json
 {
     "require": {
-        "thinkingmik/api-proxy-laravel": "1.*@dev"
+        "thinkingmik/api-proxy-laravel": "1.x"
     }
 }
 ```
