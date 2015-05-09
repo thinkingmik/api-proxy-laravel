@@ -8,7 +8,7 @@ PHP Api Proxy for Laravel
 [![Total Downloads](https://img.shields.io/packagist/dt/thinkingmik/api-proxy-laravel.svg?style=flat-square)](https://packagist.org/packages/thinkingmik/api-proxy-laravel)
 
 ## Summary
-
+ 
 - [Introduction](#introduction)
 - [Installation](#installation)
 - [Setup](#setup)
