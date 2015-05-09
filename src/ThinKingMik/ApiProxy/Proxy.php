@@ -1,19 +1,19 @@
 <?php
 
 /**
- * @package   andreoli/api-proxy-laravel
+ * @package   thinkingmik/api-proxy-laravel
  * @author    Michele Andreoli <michi.andreoli[at]gmail.com>
  * @copyright Copyright (c) Michele Andreoli
  * @license   http://mit-license.org/
- * @link      https://github.com/mandreoli/api-proxy-laravel
+ * @link      https://github.com/thinkingmik/api-proxy-laravel
  */
 
-namespace Andreoli\ApiProxy;
+namespace ThinKingMik\ApiProxy;
 
-use Andreoli\ApiProxy\Exceptions\CookieExpiredException;
-use Andreoli\ApiProxy\Exceptions\ProxyMissingParamException;
-use Andreoli\ApiProxy\Managers\CookieManager;
-use Andreoli\ApiProxy\Managers\RequestManager;
+use ThinKingMik\ApiProxy\Exceptions\CookieExpiredException;
+use ThinKingMik\ApiProxy\Exceptions\ProxyMissingParamException;
+use ThinKingMik\ApiProxy\Managers\CookieManager;
+use ThinKingMik\ApiProxy\Managers\RequestManager;
 use Illuminate\Http\Response;
 
 class Proxy {

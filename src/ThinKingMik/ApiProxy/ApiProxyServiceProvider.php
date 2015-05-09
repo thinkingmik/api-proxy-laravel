@@ -1,18 +1,18 @@
 <?php
 
 /**
- * @package   andreoli/api-proxy-laravel
+ * @package   thinkingmik/api-proxy-laravel
  * @author    Michele Andreoli <michi.andreoli[at]gmail.com>
  * @copyright Copyright (c) Michele Andreoli
  * @license   http://mit-license.org/
- * @link      https://github.com/mandreoli/api-proxy-laravel
+ * @link      https://github.com/thinkingmik/api-proxy-laravel
  */
 
-namespace Andreoli\ApiProxy;
+namespace ThinKingMik\ApiProxy;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Http\JsonResponse;
-use Andreoli\ApiProxy\Exceptions\ProxyException;
+use ThinKingMik\ApiProxy\Exceptions\ProxyException;
 
 class ApiProxyServiceProvider extends ServiceProvider {
 
@@ -29,7 +29,7 @@ class ApiProxyServiceProvider extends ServiceProvider {
      * @return void
      */
     public function boot() {
-        $this->package('andreoli/api-proxy-laravel');
+        $this->package('thinkingmik/api-proxy-laravel');
     }
 
     /**
@@ -53,7 +53,7 @@ class ApiProxyServiceProvider extends ServiceProvider {
             return $proxy;
         });
 
-        $this->app->bind('Andreoli\ApiProxy\Proxy', function($app) {
+        $this->app->bind('ThinKingMik\ApiProxy\Proxy', function($app) {
             return $app['api-proxy.proxy'];
         });
     }
