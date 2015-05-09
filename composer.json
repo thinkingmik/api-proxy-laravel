@@ -1,6 +1,6 @@
 {
-    "name": "andreoli/api-proxy-laravel",
-    "description": "A Laravel 4 proxy package for javascript API calls",
+    "name": "thinkingmik/api-proxy-laravel",
+    "description": "A Laravel proxy package for javascript API calls",
     "keywords": [
         "laravel",
         "API",
@@ -24,7 +24,7 @@
         "classmap": [
         ],
         "psr-0": {
-            "Andreoli\\ApiProxy\\": "src/"
+            "ThinKingMik\\ApiProxy\\": "src/"
         }
     },
     "minimum-stability": "stable",
