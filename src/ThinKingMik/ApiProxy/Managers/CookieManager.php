@@ -1,19 +1,19 @@
 <?php
 
 /**
- * @package   andreoli/api-proxy-laravel
+ * @package   thinkingmik/api-proxy-laravel
  * @author    Michele Andreoli <michi.andreoli[at]gmail.com>
  * @copyright Copyright (c) Michele Andreoli
  * @license   http://mit-license.org/
- * @link      https://github.com/mandreoli/api-proxy-laravel
+ * @link      https://github.com/thinkingmik/api-proxy-laravel
  */
 
-namespace Andreoli\ApiProxy\Managers;
+namespace ThinKingMik\ApiProxy\Managers;
 
-use Andreoli\ApiProxy\Exceptions\CookieExpiredException;
-use Andreoli\ApiProxy\Exceptions\CookieInvalidException;
+use ThinKingMik\ApiProxy\Exceptions\CookieExpiredException;
+use ThinKingMik\ApiProxy\Exceptions\CookieInvalidException;
 use Illuminate\Support\Facades\Cookie;
-use Andreoli\ApiProxy\ProxyAux;
+use ThinKingMik\ApiProxy\ProxyAux;
 
 class CookieManager {
 

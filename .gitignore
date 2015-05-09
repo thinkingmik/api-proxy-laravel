@@ -1,2 +1,7 @@
+<<<<<<< HEAD
 /vendor
 .idea
+=======
+.idea
+vendor
+>>>>>>> changed namespace
