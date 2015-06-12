@@ -22,6 +22,7 @@ class ProxyAux {
     const COOKIE_URI = 'uri';
     const COOKIE_METHOD = 'method';
     const PASSWORD_GRANT = 'password';
+    const CLIENT_CREDENTIALS_GRANT = 'client_credentials';
     const HEADER_AUTH = "Authorization";
     const MODE_SKIP = '0';
     const MODE_LOGIN = '1';

@@ -102,7 +102,7 @@ class Proxy {
         $mode = ProxyAux::MODE_TOKEN;
 
         if (isset($grantType)) {
-            if ($grantType === ProxyAux::PASSWORD_GRANT) {
+            if ($grantType === ProxyAux::PASSWORD_GRANT || $grantType === ProxyAux::CLIENT_CREDENTIALS_GRANT) {
                 $mode = ProxyAux::MODE_LOGIN;
             }
         }
