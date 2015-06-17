@@ -52,6 +52,9 @@ class RequestManager {
             case ProxyAux::MODE_TOKEN:
                 $mixed = $this->execRefresh($inputs, $parsedCookie);
                 break;
+            case ProxyAux::MODE_REVOKE:
+                $mixed = $this->execRevoke($inputs, $parsedCookie);
+                break;
             default:
                 $proxyResponse = $this->replicateRequest($this->method, $this->uri, $inputs);
                 $mixed = new MixResponse($proxyResponse, null);
@@ -106,6 +109,37 @@ class RequestManager {
             }
         }
 
+        return $mixed;
+    }
+
+    /**
+     * @param array $inputs
+     * @param $parsedCookie
+     * @return MixResponse
+     */
+    private function execRevoke(Array $inputs, $parsedCookie) {
+        $inputs = $this->addTokenExtraParams($inputs, $parsedCookie);
+        $inputs = $this->addRevokeExtraParams($inputs, $parsedCookie);
+        $proxyResponse = $this->replicateRequest($this->method, $this->uri, $inputs);
+
+        $cookie = null;
+        $mixed = new MixResponse($proxyResponse, $cookie);
+        
+        if ($proxyResponse->getStatusCode() === 200) {
+	        if (array_key_exists(ProxyAux::REVOKE_TOKEN_TYPE_HINT, $inputs) && $inputs[ProxyAux::REVOKE_TOKEN_TYPE_HINT] == ProxyAux::REFRESH_TOKEN) {
+	        	// Replace cookie without refresh token
+	        	if (isset($parsedCookie[ProxyAux::REFRESH_TOKEN])) {
+	        		unset($parsedCookie[ProxyAux::REFRESH_TOKEN]);
+	        	}
+	            $cookie = $this->cookieManager->createCookie($parsedCookie);
+                $mixed->setCookie($cookie);
+	        } else if (!array_key_exists(ProxyAux::REVOKE_TOKEN_TYPE_HINT, $inputs) || $inputs[ProxyAux::REVOKE_TOKEN_TYPE_HINT] == ProxyAux::ACCESS_TOKEN) {
+	        	// Destroy cookie
+                $cookie = $this->cookieManager->destroyCookie();
+                $mixed->setCookie($cookie);
+            }
+        }
+        
         return $mixed;
     }
 
@@ -281,6 +315,25 @@ class RequestManager {
             }
             if (isset($clientInfo['secret'])) {
                 $inputs = ProxyAux::addQueryValue($inputs, ProxyAux::CLIENT_SECRET, $clientInfo['secret']);
+            }
+        }
+
+        return $inputs;
+    }
+
+    /**
+     * @param $inputs
+     * @param $parsedCookie
+     * @return array
+     */
+    private function addRevokeExtraParams($inputs, $parsedCookie) {
+        if (array_key_exists(ProxyAux::REVOKE_TOKEN_TYPE_HINT, $inputs) && $inputs[ProxyAux::REVOKE_TOKEN_TYPE_HINT] == ProxyAux::REFRESH_TOKEN) {
+        	if (isset($parsedCookie[ProxyAux::REFRESH_TOKEN])) {
+            	$inputs = ProxyAux::addQueryValue($inputs, ProxyAux::REVOKE_TOKEN, $parsedCookie[ProxyAux::REFRESH_TOKEN]);
+            }
+        } else if (!array_key_exists(ProxyAux::REVOKE_TOKEN_TYPE_HINT, $inputs) || $inputs[ProxyAux::REVOKE_TOKEN_TYPE_HINT] == ProxyAux::ACCESS_TOKEN) {
+        	if (isset($parsedCookie[ProxyAux::ACCESS_TOKEN])) {
+            	$inputs = ProxyAux::addQueryValue($inputs, ProxyAux::REVOKE_TOKEN, $parsedCookie[ProxyAux::ACCESS_TOKEN]);
             }
         }
 

@@ -34,6 +34,17 @@ return [
 
     /*
       |--------------------------------------------------------------------------
+      | Proxy input: define the revoke attribute
+      |--------------------------------------------------------------------------
+      |
+      | When you call the proxy helper with this attribute set as true, this will be
+      | the last call after which the cookie will be destroyed.
+      |
+     */
+    'revoke_param' => 'revoke',
+
+    /*
+      |--------------------------------------------------------------------------
       | Set redirect URI
       |--------------------------------------------------------------------------
       |

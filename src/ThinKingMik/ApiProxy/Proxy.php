@@ -22,6 +22,7 @@ class Proxy {
     private $callMode = null;
     private $uriParam = null;
     private $skipParam = null;
+    private $revokeParam = null;
     private $redirectUri = null;
     private $clientSecrets = null;
     private $cookieManager = null;
@@ -33,6 +34,7 @@ class Proxy {
     public function __construct($params) {
         $this->uriParam = $params['uri_param'];
         $this->skipParam = $params['skip_param'];
+        $this->revokeParam = $params['revoke_param'];
         $this->redirectUri = $params['redirect_login'];
         $this->clientSecrets = $params['client_secrets'];
         $this->useHeader = $params['use_header'];
@@ -57,6 +59,7 @@ class Proxy {
         //Remove parameters from inputs
         $inputs = ProxyAux::removeQueryValue($inputs, $this->uriParam);
         $inputs = ProxyAux::removeQueryValue($inputs, $this->skipParam);
+        $inputs = ProxyAux::removeQueryValue($inputs, $this->revokeParam);
 
         //Read the cookie if exists
         $parsedCookie = null;
@@ -99,6 +102,7 @@ class Proxy {
     private function getRequestMode($inputs) {
         $grantType = ProxyAux::getQueryValue($inputs, ProxyAux::GRANT_TYPE);
         $skip = ProxyAux::getQueryValue($inputs, $this->skipParam);
+        $revoke = ProxyAux::getQueryValue($inputs, $this->revokeParam);
         $mode = ProxyAux::MODE_TOKEN;
 
         if (isset($grantType)) {
@@ -108,6 +112,9 @@ class Proxy {
         }
         else if (isset($skip) && strtolower($skip) === 'true') {
             $mode = ProxyAux::MODE_SKIP;
+        }
+        else if (isset($revoke) && strtolower($revoke) === 'true') {
+            $mode = ProxyAux::MODE_REVOKE;
         }
 
         return $mode;
