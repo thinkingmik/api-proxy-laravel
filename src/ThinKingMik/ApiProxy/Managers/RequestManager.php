@@ -15,6 +15,7 @@ use ThinKingMik\ApiProxy\Models\ProxyResponse;
 use ThinKingMik\ApiProxy\Models\MixResponse;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\ServerException;
 use ThinKingMik\ApiProxy\Exceptions\MissingClientSecretException;
 
 class RequestManager {
@@ -200,6 +201,9 @@ class RequestManager {
             $response = $client->send($request);
         }
         catch (ClientException $ex) {
+            $response = $ex->getResponse();
+        }
+        catch (ServerException $ex) {
             $response = $ex->getResponse();
         }
 
