@@ -16,7 +16,9 @@ use ThinKingMik\ApiProxy\Models\MixResponse;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\ServerException;
+use GuzzleHttp\Exception\ParseException;
 use ThinKingMik\ApiProxy\Exceptions\MissingClientSecretException;
+use ThinKingMik\ApiProxy\Exceptions\ResponseParseErrorException;
 
 class RequestManager {
 
@@ -75,6 +77,9 @@ class RequestManager {
         if ($proxyResponse->getStatusCode() === 200) {
             $clientId = (array_key_exists(ProxyAux::CLIENT_ID, $inputs)) ? $inputs[ProxyAux::CLIENT_ID] : null;
             $content = $proxyResponse->getContent();
+            if (!is_array($content)) {
+                throw new ResponseParseErrorException();
+            }
             $content = ProxyAux::addQueryValue($content, ProxyAux::COOKIE_URI, $this->uri);
             $content = ProxyAux::addQueryValue($content, ProxyAux::COOKIE_METHOD, $this->method);
             $content = ProxyAux::addQueryValue($content, ProxyAux::CLIENT_ID, $clientId);
@@ -185,7 +190,12 @@ class RequestManager {
      */
     private function replicateRequest($method, $uri, $inputs) {
         $guzzleResponse = $this->sendGuzzleRequest($method, $uri, $inputs);
-        $proxyResponse = new ProxyResponse($guzzleResponse->getStatusCode(), $guzzleResponse->getReasonPhrase(), $guzzleResponse->getProtocolVersion(), $this->getResponseContent($guzzleResponse));
+        $proxyResponse = new ProxyResponse(
+            $guzzleResponse->getStatusCode(),
+            $guzzleResponse->getReasonPhrase(),
+            $guzzleResponse->getProtocolVersion(),
+            $this->getResponseContent($guzzleResponse)
+        );
 
         return $proxyResponse;
     }
@@ -197,10 +207,22 @@ class RequestManager {
     private function getResponseContent($response) {
         switch ($response->getHeader('content-type')) {
             case 'application/json':
-                return $response->json();
+                try {
+                    $responseContent = $response->json();
+                }
+                catch (ParseException $ex) {
+                	throw new ResponseParseErrorException();
+                }
+                return $responseContent;
             case 'text/xml':
             case 'application/xml':
-                return $response->xml();
+                try {
+                	$responseContent = $response->xml();
+                }
+                catch (ParseException $ex) {
+                	throw new ResponseParseErrorException();
+                }
+                return $responseContent;
             default:
                 return $response->getBody();
         }
