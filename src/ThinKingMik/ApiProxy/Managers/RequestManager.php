@@ -15,7 +15,10 @@ use ThinKingMik\ApiProxy\Models\ProxyResponse;
 use ThinKingMik\ApiProxy\Models\MixResponse;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\ServerException;
+use GuzzleHttp\Exception\ParseException;
 use ThinKingMik\ApiProxy\Exceptions\MissingClientSecretException;
+use ThinKingMik\ApiProxy\Exceptions\ResponseParseErrorException;
 
 class RequestManager {
 
@@ -51,6 +54,9 @@ class RequestManager {
             case ProxyAux::MODE_TOKEN:
                 $mixed = $this->execRefresh($inputs, $parsedCookie);
                 break;
+            case ProxyAux::MODE_REVOKE:
+                $mixed = $this->execRevoke($inputs, $parsedCookie);
+                break;
             default:
                 $proxyResponse = $this->replicateRequest($this->method, $this->uri, $inputs);
                 $mixed = new MixResponse($proxyResponse, null);
@@ -71,6 +77,9 @@ class RequestManager {
         if ($proxyResponse->getStatusCode() === 200) {
             $clientId = (array_key_exists(ProxyAux::CLIENT_ID, $inputs)) ? $inputs[ProxyAux::CLIENT_ID] : null;
             $content = $proxyResponse->getContent();
+            if (!is_array($content)) {
+                throw new ResponseParseErrorException();
+            }
             $content = ProxyAux::addQueryValue($content, ProxyAux::COOKIE_URI, $this->uri);
             $content = ProxyAux::addQueryValue($content, ProxyAux::COOKIE_METHOD, $this->method);
             $content = ProxyAux::addQueryValue($content, ProxyAux::CLIENT_ID, $clientId);
@@ -105,6 +114,37 @@ class RequestManager {
             }
         }
 
+        return $mixed;
+    }
+
+    /**
+     * @param array $inputs
+     * @param $parsedCookie
+     * @return MixResponse
+     */
+    private function execRevoke(Array $inputs, $parsedCookie) {
+        $inputs = $this->addTokenExtraParams($inputs, $parsedCookie);
+        $inputs = $this->addRevokeExtraParams($inputs, $parsedCookie);
+        $proxyResponse = $this->replicateRequest($this->method, $this->uri, $inputs);
+
+        $cookie = null;
+        $mixed = new MixResponse($proxyResponse, $cookie);
+        
+        if ($proxyResponse->getStatusCode() === 200) {
+	        if (array_key_exists(ProxyAux::REVOKE_TOKEN_TYPE_HINT, $inputs) && $inputs[ProxyAux::REVOKE_TOKEN_TYPE_HINT] == ProxyAux::REFRESH_TOKEN) {
+	        	// Replace cookie without refresh token
+	        	if (isset($parsedCookie[ProxyAux::REFRESH_TOKEN])) {
+	        		unset($parsedCookie[ProxyAux::REFRESH_TOKEN]);
+	        	}
+	            $cookie = $this->cookieManager->createCookie($parsedCookie);
+                $mixed->setCookie($cookie);
+	        } else if (!array_key_exists(ProxyAux::REVOKE_TOKEN_TYPE_HINT, $inputs) || $inputs[ProxyAux::REVOKE_TOKEN_TYPE_HINT] == ProxyAux::ACCESS_TOKEN) {
+	        	// Destroy cookie
+                $cookie = $this->cookieManager->destroyCookie();
+                $mixed->setCookie($cookie);
+            }
+        }
+        
         return $mixed;
     }
 
@@ -150,7 +190,12 @@ class RequestManager {
      */
     private function replicateRequest($method, $uri, $inputs) {
         $guzzleResponse = $this->sendGuzzleRequest($method, $uri, $inputs);
-        $proxyResponse = new ProxyResponse($guzzleResponse->getStatusCode(), $guzzleResponse->getReasonPhrase(), $guzzleResponse->getProtocolVersion(), $this->getResponseContent($guzzleResponse));
+        $proxyResponse = new ProxyResponse(
+            $guzzleResponse->getStatusCode(),
+            $guzzleResponse->getReasonPhrase(),
+            $guzzleResponse->getProtocolVersion(),
+            $this->getResponseContent($guzzleResponse)
+        );
 
         return $proxyResponse;
     }
@@ -162,10 +207,22 @@ class RequestManager {
     private function getResponseContent($response) {
         switch ($response->getHeader('content-type')) {
             case 'application/json':
-                return $response->json();
+                try {
+                    $responseContent = $response->json();
+                }
+                catch (ParseException $ex) {
+                	throw new ResponseParseErrorException();
+                }
+                return $responseContent;
             case 'text/xml':
             case 'application/xml':
-                return $response->xml();
+                try {
+                	$responseContent = $response->xml();
+                }
+                catch (ParseException $ex) {
+                	throw new ResponseParseErrorException();
+                }
+                return $responseContent;
             default:
                 return $response->getBody();
         }
@@ -200,6 +257,9 @@ class RequestManager {
             $response = $client->send($request);
         }
         catch (ClientException $ex) {
+            $response = $ex->getResponse();
+        }
+        catch (ServerException $ex) {
             $response = $ex->getResponse();
         }
 
@@ -277,6 +337,25 @@ class RequestManager {
             }
             if (isset($clientInfo['secret'])) {
                 $inputs = ProxyAux::addQueryValue($inputs, ProxyAux::CLIENT_SECRET, $clientInfo['secret']);
+            }
+        }
+
+        return $inputs;
+    }
+
+    /**
+     * @param $inputs
+     * @param $parsedCookie
+     * @return array
+     */
+    private function addRevokeExtraParams($inputs, $parsedCookie) {
+        if (array_key_exists(ProxyAux::REVOKE_TOKEN_TYPE_HINT, $inputs) && $inputs[ProxyAux::REVOKE_TOKEN_TYPE_HINT] == ProxyAux::REFRESH_TOKEN) {
+        	if (isset($parsedCookie[ProxyAux::REFRESH_TOKEN])) {
+            	$inputs = ProxyAux::addQueryValue($inputs, ProxyAux::REVOKE_TOKEN, $parsedCookie[ProxyAux::REFRESH_TOKEN]);
+            }
+        } else if (!array_key_exists(ProxyAux::REVOKE_TOKEN_TYPE_HINT, $inputs) || $inputs[ProxyAux::REVOKE_TOKEN_TYPE_HINT] == ProxyAux::ACCESS_TOKEN) {
+        	if (isset($parsedCookie[ProxyAux::ACCESS_TOKEN])) {
+            	$inputs = ProxyAux::addQueryValue($inputs, ProxyAux::REVOKE_TOKEN, $parsedCookie[ProxyAux::ACCESS_TOKEN]);
             }
         }
 

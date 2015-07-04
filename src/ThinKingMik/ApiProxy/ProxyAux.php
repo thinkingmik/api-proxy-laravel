@@ -22,11 +22,15 @@ class ProxyAux {
     const COOKIE_URI = 'uri';
     const COOKIE_METHOD = 'method';
     const PASSWORD_GRANT = 'password';
+    const CLIENT_CREDENTIALS_GRANT = 'client_credentials';
     const HEADER_AUTH = "Authorization";
     const MODE_SKIP = '0';
     const MODE_LOGIN = '1';
     const MODE_TOKEN = '2';
     const MODE_REFRESH = '3';
+    const MODE_REVOKE = '4';
+    const REVOKE_TOKEN = 'token';
+    const REVOKE_TOKEN_TYPE_HINT = 'token_type_hint';
 
     /**
      * @param $array
